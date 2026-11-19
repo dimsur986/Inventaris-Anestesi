@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventaris Alat Instalasi Anestesi</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--tx:#1d2733;--mut:#667085;--line:#e1e6ec;--pri:#0f6e8c;--ok:#1a7f4b;--warn:#b7791f;--bad:#c0392b}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+header{background:var(--pri);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;flex:1}
+main{max-width:1150px;margin:0 auto;padding:16px}
+button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer}
+button.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+button.bad{color:var(--bad)}
+header button{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.4)}
+header button.pri{background:#fff;color:var(--pri)}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.stat b{display:block;font-size:24px}.stat span{color:var(--mut);font-size:12px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tools input{flex:2;min-width:180px}.tools select{flex:1;min-width:130px}
+.wrap{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#f8fafb;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.3px}
+tr:last-child td{border-bottom:0}
+.sub{color:var(--mut);font-size:12px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:#eef1f4}
+.b-ok{background:#e3f5ea;color:var(--ok)}.b-warn{background:#fdf1d8;color:var(--warn)}.b-bad{background:#fbe4e1;color:var(--bad)}
+.empty{padding:30px;text-align:center;color:var(--mut)}
+dialog{border:0;border-radius:12px;padding:0;width:min(720px,96vw);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+.dh{padding:14px 18px;border-bottom:1px solid var(--line);font-weight:700}
+.db{padding:16px 18px;overflow:auto;max-height:68vh}
+.df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid .full{grid-column:1/-1}
+label{font-size:12px;color:var(--mut);display:block;margin-bottom:3px}
+.aks{display:grid;grid-template-columns:2fr 70px 1.1fr 1.4fr 34px;gap:6px;margin-bottom:6px}
+.msg{font-size:12px;padding:6px 18px;background:#fff8e5;color:var(--warn)}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.aks{grid-template-columns:1fr 60px 1fr 34px}.aks .cat{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Inventaris Alat Instalasi Anestesi</h1>
+  <button onclick="openSet()">Pengaturan</button>
+  <button onclick="exportCSV()">Ekspor CSV</button>
+  <button class="pri" onclick="openForm()">+ Tambah alat</button>
+</header>
+<div id="msg" class="msg" style="display:none"></div>
+<main>
+  <div class="cards" id="stats"></div>
+  <div class="tools">
+    <input id="q" placeholder="Cari nama, merek, no. seri, no. inventaris, aksesoris..." oninput="render()">
+    <select id="fLok" onchange="render()"></select>
+    <select id="fKon" onchange="render()"></select>
+    <select id="fKal" onchange="render()">
+      <option value="">Semua kalibrasi</option>
+      <option value="lewat">Lewat jatuh tempo</option>
+      <option value="segera">≤ 30 hari lagi</option>
+    </select>
+  </div>
+  <div class="wrap"><table>
+    <thead><tr><th>Alat</th><th>No. inventaris / seri</th><th>Lokasi</th><th>Kondisi</th><th>Kalibrasi berikutnya</th><th>Aksesoris</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table><div id="empty" class="empty" style="display:none">Belum ada data. Klik “+ Tambah alat”.</div></div>
+</main>
+
+<dialog id="dlgForm">
+  <div class="dh" id="fTitle">Tambah alat</div>
+  <div class="db">
+    <div class="grid">
+      <div class="full"><label>Nama alat *</label><input id="f_nama" placeholder="mis. Mesin anestesi"></div>
+      <div><label>Merek</label><input id="f_merek"></div>
+      <div><label>Model</label><input id="f_model"></div>
+      <div><label>No. seri</label><input id="f_no_seri"></div>
+      <div><label>No. inventaris</label><input id="f_no_inventaris"></div>
+      <div><label>Lokasi</label><input id="f_lokasi" list="lokList" placeholder="mis. OK 1, Ruang pemulihan"><datalist id="lokList"></datalist></div>
+      <div><label>Kondisi</label><select id="f_kondisi"></select></div>
+      <div><label>Kalibrasi terakhir</label><input type="date" id="f_kalibrasi_terakhir"></div>
+      <div><label>Kalibrasi berikutnya</label><input type="date" id="f_kalibrasi_berikutnya"></div>
+      <div class="full"><label>Catatan</label><textarea id="f_catatan" rows="2"></textarea></div>
+    </div>
+    <h4 style="margin:16px 0 8px">Aksesoris</h4>
+    <div id="aksList"></div>
+    <button onclick="addAks()">+ Tambah aksesoris</button>
+  </div>
+  <div class="df"><button onclick="dlgForm.close()">Batal</button><button class="pri" id="btnSave" onclick="save()">Simpan</button></div>
+</dialog>
+
+<dialog id="dlgSet">
+  <div class="dh">Pengaturan koneksi</div>
+  <div class="db">
+    <label>URL Web App Google Apps Script</label>
+    <input id="s_url" placeholder="https://script.google.com/macros/s/.../exec">
+    <div style="height:10px"></div>
+    <label>Kata sandi</label>
+    <input id="s_pass" type="password">
+    <p class="sub">Dikosongkan = mode lokal (data hanya tersimpan di browser ini). Pengaturan ini tersimpan di perangkat Anda, bukan di GitHub.</p>
+  </div>
+  <div class="df"><button onclick="dlgSet.close()">Batal</button><button class="pri" onclick="saveSet()">Simpan</button></div>
+</dialog>
+
+<script>
+const KONDISI=['Baik','Perlu servis','Dalam perbaikan','Rusak','Tidak aktif'];
+const STATUS_AKS=['Lengkap','Kurang','Rusak','Hilang'];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ALAT=[],AKS=[],editId=null;
+const cfg=()=>({url:localStorage.getItem('inv_url')||'',pass:localStorage.getItem('inv_pass')||''});
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+function banner(t){const m=$('msg');m.style.display=t?'block':'none';m.textContent=t||''}
+
+async function load(){
+  const c=cfg();
+  if(!c.url){
+    try{const d=JSON.parse(localStorage.getItem('inv_local')||'{}');ALAT=d.alat||[];AKS=d.aksesoris||[]}catch(e){ALAT=[];AKS=[]}
+    banner('Mode lokal: data hanya tersimpan di browser ini. Buka Pengaturan untuk menghubungkan ke Google Sheets.');
+    return render();
+  }
+  banner('Memuat data…');
+  try{
+    const r=await fetch(c.url+'?pass='+encodeURIComponent(c.pass));
+    const d=await r.json();
+    if(!d.ok) throw new Error(d.error);
+    ALAT=d.alat;AKS=d.aksesoris;banner('');
+  }catch(e){banner('Gagal memuat: '+e.message)}
+  render();
+}
+function saveLocal(){localStorage.setItem('inv_local',JSON.stringify({alat:ALAT,aksesoris:AKS}))}
+async function post(body){
+  const c=cfg();
+  const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,pass:c.pass})});
+  const d=await r.json();if(!d.ok)throw new Error(d.error);
+}
+
+function kalStatus(a){
+  const d=a.kalibrasi_berikutnya;if(!d)return {k:'',t:'-'};
+  const diff=Math.floor((new Date(d+'T00:00:00')-new Date(new Date().toDateString()))/864e5);
+  if(diff<0)return {k:'lewat',c:'b-bad',t:'Lewat '+(-diff)+' hari'};
+  if(diff<=30)return {k:'segera',c:'b-warn',t:diff+' hari lagi'};
+  return {k:'ok',c:'b-ok',t:'Aman'};
+}
+const fmt=d=>{if(!d)return '-';const [y,m,dd]=d.split('-');return dd+'/'+m+'/'+y};
+const aksOf=id=>AKS.filter(k=>k.alat_id===id);
+const kondCls=k=>k==='Baik'?'b-ok':k==='Perlu servis'||k==='Dalam perbaikan'?'b-warn':k==='Rusak'?'b-bad':'';
+
+function fillFilters(){
+  const lok=[...new Set(ALAT.map(a=>a.lokasi).filter(Boolean))].sort();
+  const sel=(id,first,arr)=>{const cur=$(id).value;$(id).innerHTML=`<option value="">${first}</option>`+arr.map(x=>`<option>${esc(x)}</option>`).join('');$(id).value=cur};
+  sel('fLok','Semua lokasi',lok);sel('fKon','Semua kondisi',KONDISI);
+  $('lokList').innerHTML=lok.map(x=>`<option value="${esc(x)}">`).join('');
+}
+function render(){
+  fillFilters();
+  const q=$('q').value.toLowerCase(),fl=$('fLok').value,fk=$('fKon').value,fc=$('fKal').value;
+  const list=ALAT.filter(a=>{
+    const aks=aksOf(a.id);
+    const hay=[a.nama,a.merek,a.model,a.no_seri,a.no_inventaris,a.lokasi,...aks.map(k=>k.nama)].join(' ').toLowerCase();
+    return (!q||hay.includes(q))&&(!fl||a.lokasi===fl)&&(!fk||a.kondisi===fk)&&(!fc||kalStatus(a).k===fc);
+  }).sort((x,y)=>String(x.nama).localeCompare(String(y.nama)));
+  $('rows').innerHTML=list.map(a=>{
+    const ks=kalStatus(a),aks=aksOf(a.id),bad=aks.filter(k=>k.status!=='Lengkap').length;
+    return `<tr>
+      <td><b>${esc(a.nama)}</b><div class="sub">${esc([a.merek,a.model].filter(Boolean).join(' · '))}</div></td>
+      <td>${esc(a.no_inventaris||'-')}<div class="sub">${esc(a.no_seri||'')}</div></td>
+      <td>${esc(a.lokasi||'-')}</td>
+      <td><span class="badge ${kondCls(a.kondisi)}">${esc(a.kondisi||'-')}</span></td>
+      <td>${fmt(a.kalibrasi_berikutnya)}<div>${ks.c?`<span class="badge ${ks.c}">${ks.t}</span>`:''}</div></td>
+      <td>${aks.length} item${bad?` <span class="badge b-warn">${bad} bermasalah</span>`:''}<div class="sub">${esc(aks.slice(0,3).map(k=>k.nama).join(', '))}${aks.length>3?'…':''}</div></td>
+      <td style="white-space:nowrap"><button onclick="openForm('${a.id}')">Edit</button> <button class="bad" onclick="del('${a.id}')">Hapus</button></td></tr>`;
+  }).join('');
+  $('empty').style.display=list.length?'none':'block';
+  const lewat=ALAT.filter(a=>kalStatus(a).k==='lewat').length,segera=ALAT.filter(a=>kalStatus(a).k==='segera').length;
+  const aksBad=AKS.filter(k=>k.status!=='Lengkap').length;
+  $('stats').innerHTML=[['Total alat',ALAT.length],['Kondisi baik',ALAT.filter(a=>a.kondisi==='Baik').length],['Kalibrasi lewat',lewat],['Kalibrasi ≤30 hari',segera],['Aksesoris bermasalah',aksBad]]
+    .map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+}
+
+function aksRow(k={}){
+  const d=document.createElement('div');d.className='aks';
+  d.innerHTML=`<input class="an" placeholder="Nama aksesoris" value="${esc(k.nama||'')}">
+    <input class="aj" type="number" min="0" value="${k.jumlah==null||k.jumlah===''?1:esc(k.jumlah)}">
+    <select class="as">${STATUS_AKS.map(s=>`<option${k.status===s?' selected':''}>${s}</option>`).join('')}</select>
+    <input class="ac cat" placeholder="Catatan" value="${esc(k.catatan||'')}">
+    <button class="bad" onclick="this.parentNode.remove()">×</button>`;
+  $('aksList').appendChild(d);
+}
+function addAks(){aksRow()}
+function openForm(id){
+  editId=id||null;
+  const a=id?ALAT.find(x=>x.id===id):{};
+  $('fTitle').textContent=id?'Edit alat':'Tambah alat';
+  $('f_kondisi').innerHTML=KONDISI.map(k=>`<option>${k}</option>`).join('');
+  ['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'].forEach(f=>$('f_'+f).value=a[f]||(f==='kondisi'?'Baik':''));
+  $('aksList').innerHTML='';
+  (id?aksOf(id):[]).forEach(aksRow);
+  $('dlgForm').showModal();
+}
+async function save(){
+  const nama=$('f_nama').value.trim();if(!nama){alert('Nama alat wajib diisi');return}
+  const a={id:editId||uid()};
+  ['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'].forEach(f=>a[f]=$('f_'+f).value.trim());
+  const aks=[...document.querySelectorAll('#aksList .aks')].map(r=>({id:uid(),alat_id:a.id,nama:r.querySelector('.an').value.trim(),jumlah:Number(r.querySelector('.aj').value)||0,status:r.querySelector('.as').value,catatan:r.querySelector('.ac').value.trim()})).filter(k=>k.nama);
+  $('btnSave').disabled=true;
+  try{
+    if(cfg().url)await post({action:'save',alat:a,aksesoris:aks});
+    const i=ALAT.findIndex(x=>x.id===a.id);if(i>=0)ALAT[i]=a;else ALAT.push(a);
+    AKS=AKS.filter(k=>k.alat_id!==a.id).concat(aks);
+    if(!cfg().url)saveLocal();
+    $('dlgForm').close();render();
+  }catch(e){alert('Gagal menyimpan: '+e.message)}
+  $('btnSave').disabled=false;
+}
+async function del(id){
+  const a=ALAT.find(x=>x.id===id);
+  if(!confirm('Hapus "'+a.nama+'" beserta aksesorisnya?'))return;
+  try{
+    if(cfg().url)await post({action:'delete',id});
+    ALAT=ALAT.filter(x=>x.id!==id);AKS=AKS.filter(k=>k.alat_id!==id);
+    if(!cfg().url)saveLocal();render();
+  }catch(e){alert('Gagal menghapus: '+e.message)}
+}
+function openSet(){const c=cfg();$('s_url').value=c.url;$('s_pass').value=c.pass;$('dlgSet').showModal()}
+function saveSet(){
+  localStorage.setItem('inv_url',$('s_url').value.trim());
+  localStorage.setItem('inv_pass',$('s_pass').value);
+  $('dlgSet').close();load();
+}
+function exportCSV(){
+  const cols=['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'];
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const lines=[[...cols,'aksesoris'].map(q).join(',')];
+  ALAT.forEach(a=>lines.push([...cols.map(c=>a[c]),aksOf(a.id).map(k=>`${k.nama} (${k.jumlah}, ${k.status})`).join('; ')].map(q).join(',')));
+  const b=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='inventaris-anestesi-'+new Date().toISOString().slice(0,10)+'.csv';l.click();
+}
+load();
+</script>
+</body>
+</html>
