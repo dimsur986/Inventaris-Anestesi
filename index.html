@@ -214,7 +214,7 @@ const STATUS_AKS=['Lengkap','Kurang','Rusak','Hilang'];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ALAT=[],AKS=[],editId=null;
-const cfg=()=>({url:localStorage.getItem('inv_url')||'',pass:localStorage.getItem('inv_pass')||''});
+const cfg=()=>({url:localStorage.getItem('https://script.google.com/macros/s/AKfycbzQ3dvV9Zh9sGR9JHMbGPWwbNQc0URCsnBDKzZhkhAZje_21Ou4rBK1a-HUdqM0YKvv/exec')||'',pass:localStorage.getItem('inv_pass')||''});
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 function banner(t){const m=$('msg');m.style.display=t?'block':'none';m.textContent=t||''}
