@@ -1,351 +1,232 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#002060">
-<title>Inventaris Alat – Instalasi Anestesi RSUA</title>
-<link rel="icon" href="logo.png">
-<style>
-:root{
-  --navy:#002060;--navy2:#123a85;--yel:#f5b800;--yel-soft:#fff6d6;
-  --bg:#ffffff;--tx:#002060;--mut:#55648a;--line:#d9e0ec;--soft:#f5f7fb;
-  --ok:#17803d;--ok-bg:#e4f5ea;--warn:#8a5d00;--warn-bg:#fff0c2;--bad:#b42318;--bad-bg:#fde8e6;
+// ===== Backend inventaris alat anestesi (Google Apps Script) + REKAP otomatis =====
+const PASS  = 'anestesi2026';
+const SS_ID = '1qSm1t-602jZX2Btez3ys9fsDGTaih2D-_nYTxwn_Pwc'; // Google Sheet inventaris
+const TZ    = 'Asia/Jakarta';
+
+const H_ALAT = ['id','nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan','updated_at'];
+const H_AKS  = ['id','alat_id','nama','jumlah','status','catatan'];
+
+function ss_() {
+  return SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SS_ID);
 }
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--tx);font-family:'Inter','Segoe UI',system-ui,-apple-system,Roboto,sans-serif;font-size:14px;line-height:1.45}
 
-/* ===== Header ===== */
-header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 0 var(--yel),0 3px 0 rgba(245,184,0,.0)}
-header::after{content:"";display:block;height:4px;background:linear-gradient(90deg,var(--navy) 0 70%,var(--yel) 70% 100%)}
-.hbar{max-width:1150px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.brand{display:flex;align-items:center;gap:10px;min-width:0}
-.brand img{height:50px;width:auto;display:block;border-radius:10px}
-.logo-fb{display:none;width:46px;height:46px;border-radius:50%;background:var(--navy);color:var(--yel);font-weight:800;font-size:13px;align-items:center;justify-content:center;border:2px solid var(--yel)}
-.brand-t{line-height:1.15;min-width:0}
-.brand-t b{display:block;font-size:13px;letter-spacing:.2px}
-.brand-t span{font-size:11px;color:var(--mut)}
-.unit{text-align:right;line-height:1.1}
-.unit small{display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut)}
-.unit b{font-size:19px;color:var(--navy);border-bottom:3px solid var(--yel);padding-bottom:2px;display:inline-block}
-
-main{max-width:1150px;margin:0 auto;padding:18px 16px 40px}
-.titlebar{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.titlebar h1{margin:0;font-size:22px}
-.titlebar h1::after{content:"";display:block;width:44px;height:4px;background:var(--yel);border-radius:2px;margin-top:6px}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-
-button{font:inherit;min-height:40px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:600}
-button:hover{background:var(--soft)}
-button.pri{background:var(--navy);color:#fff}
-button.pri:hover{background:var(--navy2)}
-button.yel{background:var(--yel);border-color:var(--yel);color:var(--navy)}
-button.yel:hover{background:#ffc928}
-button.bad{border-color:var(--bad);color:var(--bad)}
-button.sm{min-height:34px;padding:5px 11px;font-size:13px}
-button:disabled{opacity:.6}
-
-input,select,textarea{font:inherit;font-size:16px;padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;width:100%;background:#fff;color:var(--navy);min-height:42px}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--yel-soft)}
-
-.msg{font-size:13px;padding:8px 16px;background:var(--yel-soft);color:var(--warn);border-bottom:1px solid #f0d98a;text-align:center}
-
-/* ===== Statistik ===== */
-.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
-.stat{background:#fff;border:1px solid var(--line);border-top:4px solid var(--yel);border-radius:12px;padding:12px 14px}
-.stat b{display:block;font-size:26px;line-height:1.1}
-.stat span{color:var(--mut);font-size:12px}
-
-/* ===== Filter ===== */
-.tools{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px}
-
-/* ===== Tabel ===== */
-.wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
-table{border-collapse:collapse;width:100%}
-th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
-th{background:var(--navy);color:#fff;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
-tbody tr:hover{background:var(--soft)}
-tr:last-child td{border-bottom:0}
-.sub{color:var(--mut);font-size:12px}
-.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--soft);color:var(--navy)}
-.b-ok{background:var(--ok-bg);color:var(--ok)}
-.b-warn{background:var(--warn-bg);color:var(--warn)}
-.b-bad{background:var(--bad-bg);color:var(--bad)}
-.empty{padding:34px 16px;text-align:center;color:var(--mut)}
-td.c-act{white-space:nowrap}
-
-/* ===== Dialog ===== */
-dialog{border:0;border-radius:16px;padding:0;width:min(720px,96vw);max-height:92vh;color:var(--navy);box-shadow:0 20px 60px rgba(0,32,96,.3)}
-dialog::backdrop{background:rgba(0,32,96,.45)}
-.dh{padding:14px 18px;border-bottom:3px solid var(--yel);font-weight:800;font-size:16px;background:#fff}
-.db{padding:16px 18px;overflow:auto;max-height:68vh}
-.df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;background:#fff}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.grid .full{grid-column:1/-1}
-label{font-size:12px;color:var(--mut);display:block;margin-bottom:4px;font-weight:600}
-h4{margin:18px 0 8px;font-size:14px}
-h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(--yel);margin-right:8px;vertical-align:-2px;border-radius:2px}
-.aks{display:grid;grid-template-columns:2fr 80px 1.1fr 1.4fr 40px;gap:6px;margin-bottom:8px}
-.aks button{padding:0;min-height:42px}
-.sub-p{color:var(--mut);font-size:12px}
-
-/* ===== Layar kecil (HP) ===== */
-@media(max-width:860px){
-  .cards{grid-template-columns:repeat(3,1fr)}
-  .tools{grid-template-columns:1fr 1fr}
-  .tools input{grid-column:1/-1}
+function sh_(name, headers) {
+  const ss = ss_();
+  let sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sh.getLastRow() === 0) { sh.appendRow(headers); sh.setFrozenRows(1); }
+  return sh;
 }
-@media(max-width:720px){
-  .brand img{height:42px}.logo-fb{height:40px}
-  .logo-fb{width:40px}
-  .brand-t span{display:none}
-  .unit b{font-size:16px}
-  .titlebar h1{font-size:19px}
-  .actions{width:100%}
-  .actions button{flex:1}
-  .cards{grid-template-columns:repeat(2,1fr)}
-  .cards .stat:last-child{grid-column:1/-1}
 
-  .wrap{border:0;background:transparent;overflow:visible}
-  table,thead,tbody,tr,td{display:block;width:100%}
-  thead{display:none}
-  tbody tr{background:#fff;border:1px solid var(--line);border-left:5px solid var(--yel);border-radius:12px;padding:10px 12px;margin-bottom:10px}
-  tbody tr:hover{background:#fff}
-  td{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border:0;text-align:right}
-  td::before{content:attr(data-label);color:var(--mut);font-size:12px;font-weight:600;text-align:left;flex:0 0 38%}
-  td.c-main{display:block;text-align:left;padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:4px}
-  td.c-main::before{display:none}
-  td.c-main b{font-size:16px}
-  td.c-act{justify-content:flex-end;gap:8px;padding-top:10px}
-  td.c-act::before{display:none}
-  td.c-act button{flex:1}
-
-  dialog{width:100%;max-width:100%;margin:auto 0 0;border-radius:18px 18px 0 0;max-height:94vh}
-  .db{max-height:70vh}
-  .grid{grid-template-columns:1fr}
-  .aks{grid-template-columns:80px 1fr 44px}
-  .aks .an,.aks .ac{grid-column:1/-1}
-  .aks .ac{order:5}
-  .aks button{order:4}
-  .df button{flex:1}
+function readAll_(sh) {
+  const v = sh.getDataRange().getValues();
+  const h = v.shift();
+  return v.filter(r => r[0] !== '').map(r => {
+    const o = {};
+    h.forEach((k, i) => {
+      let x = r[i];
+      if (x instanceof Date) x = Utilities.formatDate(x, TZ, 'yyyy-MM-dd');
+      o[k] = x;
+    });
+    return o;
+  });
 }
-</style>
-</head>
-<body>
-<header>
-  <div class="hbar">
-    <div class="brand">
-      <img src="logo.png" alt="Logo Rumah Sakit Universitas Airlangga" onerror="this.style.display='none';document.getElementById('logoFb').style.display='flex'">
-      <div class="logo-fb" id="logoFb">RSUA</div>
-    </div>
-    <div class="unit"><small>Instalasi</small><b>Anestesi</b></div>
-  </div>
-</header>
-<div id="msg" class="msg" style="display:none"></div>
 
-<main>
-  <div class="titlebar">
-    <h1>Inventaris Alat &amp; Aksesoris</h1>
-    <div class="actions">
-      <button onclick="openSet()">Pengaturan</button>
-      <button onclick="exportCSV()">Ekspor CSV</button>
-      <button class="yel" onclick="openForm()">+ Tambah alat</button>
-    </div>
-  </div>
+function out_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
 
-  <div class="cards" id="stats"></div>
+function doGet(e) {
+  if ((e.parameter.pass || '') !== PASS) return out_({ ok: false, error: 'Kata sandi salah' });
+  return out_({ ok: true, alat: readAll_(sh_('Alat', H_ALAT)), aksesoris: readAll_(sh_('Aksesoris', H_AKS)) });
+}
 
-  <div class="tools">
-    <input id="q" type="search" placeholder="Cari nama, merek, no. seri, aksesoris..." oninput="render()">
-    <select id="fLok" onchange="render()"></select>
-    <select id="fKon" onchange="render()"></select>
-    <select id="fKal" onchange="render()">
-      <option value="">Semua kalibrasi</option>
-      <option value="lewat">Lewat jatuh tempo</option>
-      <option value="segera">≤ 30 hari lagi</option>
-    </select>
-  </div>
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const b = JSON.parse(e.postData.contents);
+    if (b.pass !== PASS) return out_({ ok: false, error: 'Kata sandi salah' });
+    const sA = sh_('Alat', H_ALAT), sK = sh_('Aksesoris', H_AKS);
 
-  <div class="wrap"><table>
-    <thead><tr><th>Alat</th><th>No. inventaris / seri</th><th>Lokasi</th><th>Kondisi</th><th>Kalibrasi berikutnya</th><th>Aksesoris</th><th></th></tr></thead>
-    <tbody id="rows"></tbody>
-  </table><div id="empty" class="empty" style="display:none">Belum ada data. Klik “+ Tambah alat”.</div></div>
-</main>
-
-<dialog id="dlgForm">
-  <div class="dh" id="fTitle">Tambah alat</div>
-  <div class="db">
-    <div class="grid">
-      <div class="full"><label>Nama alat *</label><input id="f_nama" placeholder="mis. Mesin anestesi"></div>
-      <div><label>Merek</label><input id="f_merek"></div>
-      <div><label>Model</label><input id="f_model"></div>
-      <div><label>No. seri</label><input id="f_no_seri"></div>
-      <div><label>No. inventaris</label><input id="f_no_inventaris"></div>
-      <div><label>Lokasi</label><input id="f_lokasi" list="lokList" placeholder="mis. OK 1, Ruang pemulihan"><datalist id="lokList"></datalist></div>
-      <div><label>Kondisi</label><select id="f_kondisi"></select></div>
-      <div><label>Kalibrasi terakhir</label><input type="date" id="f_kalibrasi_terakhir"></div>
-      <div><label>Kalibrasi berikutnya</label><input type="date" id="f_kalibrasi_berikutnya"></div>
-      <div class="full"><label>Catatan</label><textarea id="f_catatan" rows="2"></textarea></div>
-    </div>
-    <h4>Aksesoris</h4>
-    <div id="aksList"></div>
-    <button class="sm" onclick="addAks()">+ Tambah aksesoris</button>
-  </div>
-  <div class="df"><button onclick="dlgForm.close()">Batal</button><button class="pri" id="btnSave" onclick="save()">Simpan</button></div>
-</dialog>
-
-<dialog id="dlgSet">
-  <div class="dh">Pengaturan koneksi</div>
-  <div class="db">
-    <label>URL Web App Google Apps Script</label>
-    <input id="s_url" placeholder="https://script.google.com/macros/s/AKfycbxnartsWq9ifdrh7pYXzmrjj96KCxQiYriLDFUQajHoKOiT8Tk8zyjHOAg-vFyLbMReLw/exec">
-    <div style="height:12px"></div>
-    <label>Kata sandi</label>
-    <input id="s_pass" type="password">
-    <p class="sub-p">Dikosongkan = mode lokal (data hanya tersimpan di browser ini). Pengaturan ini tersimpan di perangkat Anda, bukan di GitHub.</p>
-  </div>
-  <div class="df"><button onclick="dlgSet.close()">Batal</button><button class="pri" onclick="saveSet()">Simpan</button></div>
-</dialog>
-
-<script>
-const KONDISI=['Baik','Perlu servis','Dalam perbaikan','Rusak','Tidak aktif'];
-const STATUS_AKS=['Lengkap','Kurang','Rusak','Hilang'];
-const $=id=>document.getElementById(id);
-const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let ALAT=[],AKS=[],editId=null;
-const DEFAULT_URL='https://script.google.com/macros/s/ISI_URL_ANDA/exec';
-const DEFAULT_PASS='anestesi2026';
-const cfg=()=>({url:localStorage.getItem('inv_url')||DEFAULT_URL,pass:localStorage.getItem('inv_pass')||DEFAULT_PASS});
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-
-function banner(t){const m=$('msg');m.style.display=t?'block':'none';m.textContent=t||''}
-
-async function load(){
-  const c=cfg();
-  if(!c.url){
-    try{const d=JSON.parse(localStorage.getItem('inv_local')||'{}');ALAT=d.alat||[];AKS=d.aksesoris||[]}catch(e){ALAT=[];AKS=[]}
-    banner('Mode lokal: data hanya tersimpan di browser ini. Buka Pengaturan untuk menghubungkan ke Google Sheets.');
-    return render();
+    if (b.action === 'save') {
+      const a = b.alat;
+      a.updated_at = new Date().toISOString();
+      const row = H_ALAT.map(k => a[k] === undefined ? '' : a[k]);
+      const ids = sA.getRange(1, 1, sA.getLastRow(), 1).getValues().map(r => r[0]);
+      const idx = ids.indexOf(a.id);
+      if (idx > 0) sA.getRange(idx + 1, 1, 1, H_ALAT.length).setValues([row]);
+      else sA.appendRow(row);
+      delAks_(sK, a.id);
+      (b.aksesoris || []).forEach(k => sK.appendRow(H_AKS.map(h => k[h] === undefined ? '' : k[h])));
+      safeRekap_();
+      return out_({ ok: true });
+    }
+    if (b.action === 'delete') {
+      const ids = sA.getRange(1, 1, sA.getLastRow(), 1).getValues().map(r => r[0]);
+      const idx = ids.indexOf(b.id);
+      if (idx > 0) sA.deleteRow(idx + 1);
+      delAks_(sK, b.id);
+      safeRekap_();
+      return out_({ ok: true });
+    }
+    return out_({ ok: false, error: 'Aksi tidak dikenal' });
+  } catch (err) {
+    return out_({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
   }
-  banner('Memuat data…');
-  try{
-    const r=await fetch(c.url+'?pass='+encodeURIComponent(c.pass));
-    const d=await r.json();
-    if(!d.ok) throw new Error(d.error);
-    ALAT=d.alat;AKS=d.aksesoris;banner('');
-  }catch(e){banner('Gagal memuat: '+e.message)}
-  render();
-}
-function saveLocal(){localStorage.setItem('inv_local',JSON.stringify({alat:ALAT,aksesoris:AKS}))}
-async function post(body){
-  const c=cfg();
-  const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,pass:c.pass})});
-  const d=await r.json();if(!d.ok)throw new Error(d.error);
 }
 
-function kalStatus(a){
-  const d=a.kalibrasi_berikutnya;if(!d)return {k:'',t:'-'};
-  const diff=Math.floor((new Date(d+'T00:00:00')-new Date(new Date().toDateString()))/864e5);
-  if(diff<0)return {k:'lewat',c:'b-bad',t:'Lewat '+(-diff)+' hari'};
-  if(diff<=30)return {k:'segera',c:'b-warn',t:diff+' hari lagi'};
-  return {k:'ok',c:'b-ok',t:'Aman'};
-}
-const fmt=d=>{if(!d)return '-';const [y,m,dd]=d.split('-');return dd+'/'+m+'/'+y};
-const aksOf=id=>AKS.filter(k=>k.alat_id===id);
-const kondCls=k=>k==='Baik'?'b-ok':k==='Perlu servis'||k==='Dalam perbaikan'?'b-warn':k==='Rusak'?'b-bad':'';
-
-function fillFilters(){
-  const lok=[...new Set(ALAT.map(a=>a.lokasi).filter(Boolean))].sort();
-  const sel=(id,first,arr)=>{const cur=$(id).value;$(id).innerHTML=`<option value="">${first}</option>`+arr.map(x=>`<option>${esc(x)}</option>`).join('');$(id).value=cur};
-  sel('fLok','Semua lokasi',lok);sel('fKon','Semua kondisi',KONDISI);
-  $('lokList').innerHTML=lok.map(x=>`<option value="${esc(x)}">`).join('');
-}
-function render(){
-  fillFilters();
-  const q=$('q').value.toLowerCase(),fl=$('fLok').value,fk=$('fKon').value,fc=$('fKal').value;
-  const list=ALAT.filter(a=>{
-    const aks=aksOf(a.id);
-    const hay=[a.nama,a.merek,a.model,a.no_seri,a.no_inventaris,a.lokasi,...aks.map(k=>k.nama)].join(' ').toLowerCase();
-    return (!q||hay.includes(q))&&(!fl||a.lokasi===fl)&&(!fk||a.kondisi===fk)&&(!fc||kalStatus(a).k===fc);
-  }).sort((x,y)=>String(x.nama).localeCompare(String(y.nama)));
-  $('rows').innerHTML=list.map(a=>{
-    const ks=kalStatus(a),aks=aksOf(a.id),bad=aks.filter(k=>k.status!=='Lengkap').length;
-    return `<tr>
-      <td class="c-main" data-label="Alat"><b>${esc(a.nama)}</b><div class="sub">${esc([a.merek,a.model].filter(Boolean).join(' · '))}</div></td>
-      <td data-label="No. inventaris / seri"><div>${esc(a.no_inventaris||'-')}<div class="sub">${esc(a.no_seri||'')}</div></div></td>
-      <td data-label="Lokasi">${esc(a.lokasi||'-')}</td>
-      <td data-label="Kondisi"><span class="badge ${kondCls(a.kondisi)}">${esc(a.kondisi||'-')}</span></td>
-      <td data-label="Kalibrasi berikutnya"><div>${fmt(a.kalibrasi_berikutnya)}<div>${ks.c?`<span class="badge ${ks.c}">${ks.t}</span>`:''}</div></div></td>
-      <td data-label="Aksesoris"><div>${aks.length} item${bad?` <span class="badge b-warn">${bad} bermasalah</span>`:''}<div class="sub">${esc(aks.slice(0,3).map(k=>k.nama).join(', '))}${aks.length>3?'…':''}</div></div></td>
-      <td class="c-act"><button class="sm" onclick="openForm('${a.id}')">Edit</button> <button class="sm bad" onclick="del('${a.id}')">Hapus</button></td></tr>`;
-  }).join('');
-  $('empty').style.display=list.length?'none':'block';
-  const lewat=ALAT.filter(a=>kalStatus(a).k==='lewat').length,segera=ALAT.filter(a=>kalStatus(a).k==='segera').length;
-  const aksBad=AKS.filter(k=>k.status!=='Lengkap').length;
-  $('stats').innerHTML=[['Total alat',ALAT.length],['Kondisi baik',ALAT.filter(a=>a.kondisi==='Baik').length],['Kalibrasi lewat',lewat],['Kalibrasi ≤30 hari',segera],['Aksesoris bermasalah',aksBad]]
-    .map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+function delAks_(sK, alatId) {
+  const v = sK.getDataRange().getValues();
+  for (let i = v.length - 1; i >= 1; i--) if (v[i][1] === alatId) sK.deleteRow(i + 1);
 }
 
-function aksRow(k={}){
-  const d=document.createElement('div');d.className='aks';
-  d.innerHTML=`<input class="an" placeholder="Nama aksesoris" value="${esc(k.nama||'')}">
-    <input class="aj" type="number" min="0" value="${k.jumlah==null||k.jumlah===''?1:esc(k.jumlah)}">
-    <select class="as">${STATUS_AKS.map(s=>`<option${k.status===s?' selected':''}>${s}</option>`).join('')}</select>
-    <input class="ac" placeholder="Catatan" value="${esc(k.catatan||'')}">
-    <button class="bad" onclick="this.parentNode.remove()">×</button>`;
-  $('aksList').appendChild(d);
+// ================= REKAP =================
+// Kegagalan membuat rekap tidak boleh membatalkan penyimpanan data
+function safeRekap_() {
+  try { rebuildRekap_(); } catch (err) { Logger.log('Rekap gagal: ' + err); }
 }
-function addAks(){aksRow()}
-function openForm(id){
-  editId=id||null;
-  const a=id?ALAT.find(x=>x.id===id):{};
-  $('fTitle').textContent=id?'Edit alat':'Tambah alat';
-  $('f_kondisi').innerHTML=KONDISI.map(k=>`<option>${k}</option>`).join('');
-  ['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'].forEach(f=>$('f_'+f).value=a[f]||(f==='kondisi'?'Baik':''));
-  $('aksList').innerHTML='';
-  (id?aksOf(id):[]).forEach(aksRow);
-  $('dlgForm').showModal();
+
+// Menu di Google Sheet (aktif jika script terpasang di dalam spreadsheet)
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('Inventaris')
+    .addItem('Perbarui Rekap', 'rebuildRekap')
+    .addToUi();
 }
-async function save(){
-  const nama=$('f_nama').value.trim();if(!nama){alert('Nama alat wajib diisi');return}
-  const a={id:editId||uid()};
-  ['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'].forEach(f=>a[f]=$('f_'+f).value.trim());
-  const aks=[...document.querySelectorAll('#aksList .aks')].map(r=>({id:uid(),alat_id:a.id,nama:r.querySelector('.an').value.trim(),jumlah:Number(r.querySelector('.aj').value)||0,status:r.querySelector('.as').value,catatan:r.querySelector('.ac').value.trim()})).filter(k=>k.nama);
-  $('btnSave').disabled=true;
-  try{
-    if(cfg().url)await post({action:'save',alat:a,aksesoris:aks});
-    const i=ALAT.findIndex(x=>x.id===a.id);if(i>=0)ALAT[i]=a;else ALAT.push(a);
-    AKS=AKS.filter(k=>k.alat_id!==a.id).concat(aks);
-    if(!cfg().url)saveLocal();
-    $('dlgForm').close();render();
-  }catch(e){alert('Gagal menyimpan: '+e.message)}
-  $('btnSave').disabled=false;
+
+// Jalankan manual dari editor / menu
+function rebuildRekap() { rebuildRekap_(); }
+
+function toDate_(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ''));
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : '';
 }
-async function del(id){
-  const a=ALAT.find(x=>x.id===id);
-  if(!confirm('Hapus "'+a.nama+'" beserta aksesorisnya?'))return;
-  try{
-    if(cfg().url)await post({action:'delete',id});
-    ALAT=ALAT.filter(x=>x.id!==id);AKS=AKS.filter(k=>k.alat_id!==id);
-    if(!cfg().url)saveLocal();render();
-  }catch(e){alert('Gagal menghapus: '+e.message)}
+
+function kalStatus_(next, today) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(next || ''));
+  if (!m) return { t: '-', k: '' };
+  const diff = Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3]) - today) / 864e5);
+  if (diff < 0)   return { t: 'Lewat ' + (-diff) + ' hari', k: 'bad', lewat: true };
+  if (diff <= 30) return { t: diff + ' hari lagi', k: 'warn', segera: true };
+  return { t: 'Aman', k: 'ok' };
 }
-function openSet(){const c=cfg();$('s_url').value=c.url;$('s_pass').value=c.pass;$('dlgSet').showModal()}
-function saveSet(){
-  localStorage.setItem('inv_url',$('s_url').value.trim());
-  localStorage.setItem('inv_pass',$('s_pass').value);
-  $('dlgSet').close();load();
+
+function rebuildRekap_() {
+  const NAVY = '#002060', YEL = '#f5b800', LINE = '#d9e0ec', SOFT = '#f5f7fb';
+  const C = { ok: ['#e4f5ea', '#17803d'], warn: ['#fff0c2', '#8a5d00'], bad: ['#fde8e6', '#b42318'] };
+  const kondK = k => k === 'Baik' ? 'ok' : (k === 'Perlu servis' || k === 'Dalam perbaikan') ? 'warn' : k === 'Rusak' ? 'bad' : '';
+
+  const ss = ss_();
+  const alat = readAll_(sh_('Alat', H_ALAT)).sort((x, y) => String(x.nama).localeCompare(String(y.nama)));
+  const aks  = readAll_(sh_('Aksesoris', H_AKS));
+  const aksOf = id => aks.filter(k => k.alat_id === id);
+
+  const now = new Date();
+  const t = Utilities.formatDate(now, TZ, 'yyyy-MM-dd').split('-');
+  const today = Date.UTC(+t[0], +t[1] - 1, +t[2]);
+
+  // ---- siapkan sheet ----
+  let sh = ss.getSheetByName('Rekap');
+  if (!sh) sh = ss.insertSheet('Rekap', 0);
+  const old = sh.getFilter(); if (old) old.remove();
+  sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).breakApart();
+  sh.clear();
+  sh.setHiddenGridlines(true);
+
+  const HEAD = ['No', 'Nama Alat', 'Merek', 'Model', 'No. Inventaris', 'No. Seri', 'Lokasi', 'Kondisi',
+    'Kalibrasi Terakhir', 'Kalibrasi Berikutnya', 'Status Kalibrasi', 'Jml Aksesoris', 'Aks. Bermasalah',
+    'Daftar Aksesoris', 'Catatan'];
+  const NC = HEAD.length;                 // 15 kolom
+  const HR = 7;                           // baris header tabel
+  const n = alat.length;
+
+  // ---- judul ----
+  sh.getRange(1, 1, 1, NC).merge().setValue('REKAP INVENTARIS ALAT — INSTALASI ANESTESI RSUA')
+    .setBackground(NAVY).setFontColor('#ffffff').setFontSize(15).setFontWeight('bold')
+    .setHorizontalAlignment('left').setVerticalAlignment('middle');
+  sh.setRowHeight(1, 38);
+  sh.getRange(2, 1, 1, NC).merge()
+    .setValue('Diperbarui otomatis: ' + Utilities.formatDate(now, TZ, 'dd/MM/yyyy HH:mm') + ' WIB')
+    .setBackground(YEL).setFontColor(NAVY).setFontWeight('bold').setFontSize(10);
+
+  // ---- ringkasan ----
+  const kondCount = k => alat.filter(a => a.kondisi === k).length;
+  const stats = [
+    ['Total alat', n],
+    ['Kondisi baik', kondCount('Baik')],
+    ['Perlu servis', kondCount('Perlu servis')],
+    ['Dalam perbaikan', kondCount('Dalam perbaikan')],
+    ['Rusak', kondCount('Rusak')],
+    ['Tidak aktif', kondCount('Tidak aktif')],
+    ['Kalibrasi lewat', alat.filter(a => kalStatus_(a.kalibrasi_berikutnya, today).lewat).length],
+    ['Kalibrasi ≤ 30 hari', alat.filter(a => kalStatus_(a.kalibrasi_berikutnya, today).segera).length],
+    ['Aksesoris bermasalah', aks.filter(k => k.status !== 'Lengkap').length]
+  ];
+  const sLab = sh.getRange(4, 2, 1, stats.length);
+  sLab.setValues([stats.map(s => s[0])]).setFontSize(9).setFontColor('#55648a').setFontWeight('bold')
+    .setBackground(SOFT).setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle');
+  const sVal = sh.getRange(5, 2, 1, stats.length);
+  sVal.setValues([stats.map(s => s[1])]).setFontSize(20).setFontWeight('bold').setFontColor(NAVY)
+    .setBackground('#ffffff').setHorizontalAlignment('center').setVerticalAlignment('middle');
+  sh.getRange(4, 2, 2, stats.length).setBorder(true, true, true, true, true, true, LINE, SpreadsheetApp.BorderStyle.SOLID);
+  sh.getRange(4, 2, 1, stats.length).setBorder(true, null, null, null, null, null, YEL, SpreadsheetApp.BorderStyle.SOLID_THICK);
+  sh.setRowHeight(4, 34); sh.setRowHeight(5, 42);
+  // beri warna pada angka bermasalah
+  if (stats[4][1] > 0) sh.getRange(5, 6).setFontColor(C.bad[1]);
+  if (stats[6][1] > 0) sh.getRange(5, 8).setFontColor(C.bad[1]);
+  if (stats[7][1] > 0) sh.getRange(5, 9).setFontColor(C.warn[1]);
+  if (stats[8][1] > 0) sh.getRange(5, 10).setFontColor(C.warn[1]);
+
+  // ---- header tabel ----
+  sh.getRange(HR, 1, 1, NC).setValues([HEAD]).setBackground(NAVY).setFontColor('#ffffff').setFontWeight('bold')
+    .setFontSize(10).setHorizontalAlignment('center').setVerticalAlignment('middle').setWrap(true);
+  sh.setRowHeight(HR, 36);
+  sh.setFrozenRows(HR);
+
+  // ---- isi tabel ----
+  if (n > 0) {
+    const vals = [], bgs = [], fcs = [];
+    alat.forEach((a, i) => {
+      const ak = aksOf(a.id), ks = kalStatus_(a.kalibrasi_berikutnya, today);
+      vals.push([
+        i + 1, a.nama, a.merek, a.model, a.no_inventaris, a.no_seri, a.lokasi, a.kondisi,
+        toDate_(a.kalibrasi_terakhir), toDate_(a.kalibrasi_berikutnya), ks.t,
+        ak.length, ak.filter(k => k.status !== 'Lengkap').length,
+        ak.map(k => '• ' + k.nama + ' (' + k.jumlah + ', ' + k.status + ')').join('\n'),
+        a.catatan
+      ]);
+      const base = i % 2 ? SOFT : '#ffffff';
+      const bg = new Array(NC).fill(base), fc = new Array(NC).fill(NAVY);
+      const kk = kondK(a.kondisi);
+      if (kk) { bg[7] = C[kk][0]; fc[7] = C[kk][1]; }
+      if (ks.k) { bg[10] = C[ks.k][0]; fc[10] = C[ks.k][1]; }
+      if (ak.some(k => k.status !== 'Lengkap')) { bg[12] = C.warn[0]; fc[12] = C.warn[1]; }
+      bgs.push(bg); fcs.push(fc);
+    });
+    const body = sh.getRange(HR + 1, 1, n, NC);
+    body.setValues(vals).setBackgrounds(bgs).setFontColors(fcs)
+      .setFontSize(10).setVerticalAlignment('top').setWrap(true)
+      .setBorder(true, true, true, true, true, true, LINE, SpreadsheetApp.BorderStyle.SOLID);
+    sh.getRange(HR + 1, 1, n, 1).setHorizontalAlignment('center');
+    sh.getRange(HR + 1, 2, n, 1).setFontWeight('bold');
+    sh.getRange(HR + 1, 8, n, 1).setHorizontalAlignment('center').setFontWeight('bold');
+    sh.getRange(HR + 1, 9, n, 2).setNumberFormat('dd/MM/yyyy').setHorizontalAlignment('center');
+    sh.getRange(HR + 1, 11, n, 3).setHorizontalAlignment('center');
+    sh.getRange(HR + 1, 11, n, 1).setFontWeight('bold');
+    sh.getRange(HR, 1, n + 1, NC).createFilter();
+  } else {
+    sh.getRange(HR + 1, 1, 1, NC).merge().setValue('Belum ada data alat.')
+      .setHorizontalAlignment('center').setFontColor('#55648a');
+  }
+
+  // ---- lebar kolom ----
+  [40, 200, 110, 110, 120, 120, 120, 110, 100, 110, 120, 80, 90, 320, 200]
+    .forEach((w, i) => sh.setColumnWidth(i + 1, w));
+
+  ss.setActiveSheet(sh);
 }
-function exportCSV(){
-  const cols=['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'];
-  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const lines=[[...cols,'aksesoris'].map(q).join(',')];
-  ALAT.forEach(a=>lines.push([...cols.map(c=>a[c]),aksOf(a.id).map(k=>`${k.nama} (${k.jumlah}, ${k.status})`).join('; ')].map(q).join(',')));
-  const b=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
-  const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='inventaris-anestesi-'+new Date().toISOString().slice(0,10)+'.csv';l.click();
+
+function tes() {
+  Logger.log(doGet({ parameter: { pass: PASS } }).getContent());
 }
-load();
-</script>
-</body>
-</html>
