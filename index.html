@@ -1,17 +1,12 @@
-// ===== Backend inventaris alat anestesi (Google Apps Script) + REKAP otomatis =====
-const PASS  = 'anestesi2026';
-const SS_ID = '1qSm1t-602jZX2Btez3ys9fsDGTaih2D-_nYTxwn_Pwc'; // Google Sheet inventaris
-const TZ    = 'Asia/Jakarta';
+```javascript
+// ===== Backend inventaris alat anestesi (Google Apps Script) =====
+const PASS = 'anestesi2026';
 
 const H_ALAT = ['id','nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan','updated_at'];
 const H_AKS  = ['id','alat_id','nama','jumlah','status','catatan'];
 
-function ss_() {
-  return SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SS_ID);
-}
-
 function sh_(name, headers) {
-  const ss = ss_();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(name) || ss.insertSheet(name);
   if (sh.getLastRow() === 0) { sh.appendRow(headers); sh.setFrozenRows(1); }
   return sh;
@@ -24,7 +19,7 @@ function readAll_(sh) {
     const o = {};
     h.forEach((k, i) => {
       let x = r[i];
-      if (x instanceof Date) x = Utilities.formatDate(x, TZ, 'yyyy-MM-dd');
+      if (x instanceof Date) x = Utilities.formatDate(x, 'Asia/Jakarta', 'yyyy-MM-dd');
       o[k] = x;
     });
     return o;
@@ -58,7 +53,6 @@ function doPost(e) {
       else sA.appendRow(row);
       delAks_(sK, a.id);
       (b.aksesoris || []).forEach(k => sK.appendRow(H_AKS.map(h => k[h] === undefined ? '' : k[h])));
-      safeRekap_();
       return out_({ ok: true });
     }
     if (b.action === 'delete') {
@@ -66,7 +60,6 @@ function doPost(e) {
       const idx = ids.indexOf(b.id);
       if (idx > 0) sA.deleteRow(idx + 1);
       delAks_(sK, b.id);
-      safeRekap_();
       return out_({ ok: true });
     }
     return out_({ ok: false, error: 'Aksi tidak dikenal' });
@@ -82,151 +75,9 @@ function delAks_(sK, alatId) {
   for (let i = v.length - 1; i >= 1; i--) if (v[i][1] === alatId) sK.deleteRow(i + 1);
 }
 
-// ================= REKAP =================
-// Kegagalan membuat rekap tidak boleh membatalkan penyimpanan data
-function safeRekap_() {
-  try { rebuildRekap_(); } catch (err) { Logger.log('Rekap gagal: ' + err); }
-}
-
-// Menu di Google Sheet (aktif jika script terpasang di dalam spreadsheet)
-function onOpen() {
-  SpreadsheetApp.getUi().createMenu('Inventaris')
-    .addItem('Perbarui Rekap', 'rebuildRekap')
-    .addToUi();
-}
-
-// Jalankan manual dari editor / menu
-function rebuildRekap() { rebuildRekap_(); }
-
-function toDate_(s) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ''));
-  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : '';
-}
-
-function kalStatus_(next, today) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(next || ''));
-  if (!m) return { t: '-', k: '' };
-  const diff = Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3]) - today) / 864e5);
-  if (diff < 0)   return { t: 'Lewat ' + (-diff) + ' hari', k: 'bad', lewat: true };
-  if (diff <= 30) return { t: diff + ' hari lagi', k: 'warn', segera: true };
-  return { t: 'Aman', k: 'ok' };
-}
-
-function rebuildRekap_() {
-  const NAVY = '#002060', YEL = '#f5b800', LINE = '#d9e0ec', SOFT = '#f5f7fb';
-  const C = { ok: ['#e4f5ea', '#17803d'], warn: ['#fff0c2', '#8a5d00'], bad: ['#fde8e6', '#b42318'] };
-  const kondK = k => k === 'Baik' ? 'ok' : (k === 'Perlu servis' || k === 'Dalam perbaikan') ? 'warn' : k === 'Rusak' ? 'bad' : '';
-
-  const ss = ss_();
-  const alat = readAll_(sh_('Alat', H_ALAT)).sort((x, y) => String(x.nama).localeCompare(String(y.nama)));
-  const aks  = readAll_(sh_('Aksesoris', H_AKS));
-  const aksOf = id => aks.filter(k => k.alat_id === id);
-
-  const now = new Date();
-  const t = Utilities.formatDate(now, TZ, 'yyyy-MM-dd').split('-');
-  const today = Date.UTC(+t[0], +t[1] - 1, +t[2]);
-
-  // ---- siapkan sheet ----
-  let sh = ss.getSheetByName('Rekap');
-  if (!sh) sh = ss.insertSheet('Rekap', 0);
-  const old = sh.getFilter(); if (old) old.remove();
-  sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).breakApart();
-  sh.clear();
-  sh.setHiddenGridlines(true);
-
-  const HEAD = ['No', 'Nama Alat', 'Merek', 'Model', 'No. Inventaris', 'No. Seri', 'Lokasi', 'Kondisi',
-    'Kalibrasi Terakhir', 'Kalibrasi Berikutnya', 'Status Kalibrasi', 'Jml Aksesoris', 'Aks. Bermasalah',
-    'Daftar Aksesoris', 'Catatan'];
-  const NC = HEAD.length;                 // 15 kolom
-  const HR = 7;                           // baris header tabel
-  const n = alat.length;
-
-  // ---- judul ----
-  sh.getRange(1, 1, 1, NC).merge().setValue('REKAP INVENTARIS ALAT — INSTALASI ANESTESI RSUA')
-    .setBackground(NAVY).setFontColor('#ffffff').setFontSize(15).setFontWeight('bold')
-    .setHorizontalAlignment('left').setVerticalAlignment('middle');
-  sh.setRowHeight(1, 38);
-  sh.getRange(2, 1, 1, NC).merge()
-    .setValue('Diperbarui otomatis: ' + Utilities.formatDate(now, TZ, 'dd/MM/yyyy HH:mm') + ' WIB')
-    .setBackground(YEL).setFontColor(NAVY).setFontWeight('bold').setFontSize(10);
-
-  // ---- ringkasan ----
-  const kondCount = k => alat.filter(a => a.kondisi === k).length;
-  const stats = [
-    ['Total alat', n],
-    ['Kondisi baik', kondCount('Baik')],
-    ['Perlu servis', kondCount('Perlu servis')],
-    ['Dalam perbaikan', kondCount('Dalam perbaikan')],
-    ['Rusak', kondCount('Rusak')],
-    ['Tidak aktif', kondCount('Tidak aktif')],
-    ['Kalibrasi lewat', alat.filter(a => kalStatus_(a.kalibrasi_berikutnya, today).lewat).length],
-    ['Kalibrasi ≤ 30 hari', alat.filter(a => kalStatus_(a.kalibrasi_berikutnya, today).segera).length],
-    ['Aksesoris bermasalah', aks.filter(k => k.status !== 'Lengkap').length]
-  ];
-  const sLab = sh.getRange(4, 2, 1, stats.length);
-  sLab.setValues([stats.map(s => s[0])]).setFontSize(9).setFontColor('#55648a').setFontWeight('bold')
-    .setBackground(SOFT).setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle');
-  const sVal = sh.getRange(5, 2, 1, stats.length);
-  sVal.setValues([stats.map(s => s[1])]).setFontSize(20).setFontWeight('bold').setFontColor(NAVY)
-    .setBackground('#ffffff').setHorizontalAlignment('center').setVerticalAlignment('middle');
-  sh.getRange(4, 2, 2, stats.length).setBorder(true, true, true, true, true, true, LINE, SpreadsheetApp.BorderStyle.SOLID);
-  sh.getRange(4, 2, 1, stats.length).setBorder(true, null, null, null, null, null, YEL, SpreadsheetApp.BorderStyle.SOLID_THICK);
-  sh.setRowHeight(4, 34); sh.setRowHeight(5, 42);
-  // beri warna pada angka bermasalah
-  if (stats[4][1] > 0) sh.getRange(5, 6).setFontColor(C.bad[1]);
-  if (stats[6][1] > 0) sh.getRange(5, 8).setFontColor(C.bad[1]);
-  if (stats[7][1] > 0) sh.getRange(5, 9).setFontColor(C.warn[1]);
-  if (stats[8][1] > 0) sh.getRange(5, 10).setFontColor(C.warn[1]);
-
-  // ---- header tabel ----
-  sh.getRange(HR, 1, 1, NC).setValues([HEAD]).setBackground(NAVY).setFontColor('#ffffff').setFontWeight('bold')
-    .setFontSize(10).setHorizontalAlignment('center').setVerticalAlignment('middle').setWrap(true);
-  sh.setRowHeight(HR, 36);
-  sh.setFrozenRows(HR);
-
-  // ---- isi tabel ----
-  if (n > 0) {
-    const vals = [], bgs = [], fcs = [];
-    alat.forEach((a, i) => {
-      const ak = aksOf(a.id), ks = kalStatus_(a.kalibrasi_berikutnya, today);
-      vals.push([
-        i + 1, a.nama, a.merek, a.model, a.no_inventaris, a.no_seri, a.lokasi, a.kondisi,
-        toDate_(a.kalibrasi_terakhir), toDate_(a.kalibrasi_berikutnya), ks.t,
-        ak.length, ak.filter(k => k.status !== 'Lengkap').length,
-        ak.map(k => '• ' + k.nama + ' (' + k.jumlah + ', ' + k.status + ')').join('\n'),
-        a.catatan
-      ]);
-      const base = i % 2 ? SOFT : '#ffffff';
-      const bg = new Array(NC).fill(base), fc = new Array(NC).fill(NAVY);
-      const kk = kondK(a.kondisi);
-      if (kk) { bg[7] = C[kk][0]; fc[7] = C[kk][1]; }
-      if (ks.k) { bg[10] = C[ks.k][0]; fc[10] = C[ks.k][1]; }
-      if (ak.some(k => k.status !== 'Lengkap')) { bg[12] = C.warn[0]; fc[12] = C.warn[1]; }
-      bgs.push(bg); fcs.push(fc);
-    });
-    const body = sh.getRange(HR + 1, 1, n, NC);
-    body.setValues(vals).setBackgrounds(bgs).setFontColors(fcs)
-      .setFontSize(10).setVerticalAlignment('top').setWrap(true)
-      .setBorder(true, true, true, true, true, true, LINE, SpreadsheetApp.BorderStyle.SOLID);
-    sh.getRange(HR + 1, 1, n, 1).setHorizontalAlignment('center');
-    sh.getRange(HR + 1, 2, n, 1).setFontWeight('bold');
-    sh.getRange(HR + 1, 8, n, 1).setHorizontalAlignment('center').setFontWeight('bold');
-    sh.getRange(HR + 1, 9, n, 2).setNumberFormat('dd/MM/yyyy').setHorizontalAlignment('center');
-    sh.getRange(HR + 1, 11, n, 3).setHorizontalAlignment('center');
-    sh.getRange(HR + 1, 11, n, 1).setFontWeight('bold');
-    sh.getRange(HR, 1, n + 1, NC).createFilter();
-  } else {
-    sh.getRange(HR + 1, 1, 1, NC).merge().setValue('Belum ada data alat.')
-      .setHorizontalAlignment('center').setFontColor('#55648a');
-  }
-
-  // ---- lebar kolom ----
-  [40, 200, 110, 110, 120, 120, 120, 110, 100, 110, 120, 80, 90, 320, 200]
-    .forEach((w, i) => sh.setColumnWidth(i + 1, w));
-
-  ss.setActiveSheet(sh);
-}
-
 function tes() {
   Logger.log(doGet({ parameter: { pass: PASS } }).getContent());
 }
+
+dari kode diatas buatkan sebuah kode untuk tabel yang rapi dan bagus
+```
