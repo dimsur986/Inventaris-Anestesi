@@ -214,7 +214,9 @@ const STATUS_AKS=['Lengkap','Kurang','Rusak','Hilang'];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ALAT=[],AKS=[],editId=null;
-const cfg=()=>({url:localStorage.getItem('inv_url')||'',pass:localStorage.getItem('inv_pass')||''});
+const DEFAULT_URL='';   // opsional: tempel URL Web App Apps Script (…/exec)
+const DEFAULT_PASS='';  // opsional: kata sandi (lebih aman diisi lewat tombol Pengaturan)
+const cfg=()=>({url:localStorage.getItem('inv_url')||DEFAULT_URL,pass:localStorage.getItem('inv_pass')||DEFAULT_PASS});
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 function banner(t){const m=$('msg');m.style.display=t?'block':'none';m.textContent=t||''}
@@ -239,8 +241,10 @@ function saveLocal(){localStorage.setItem('inv_local',JSON.stringify({alat:ALAT,
 async function post(body){
   const c=cfg();
   const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,pass:c.pass})});
-  const d=await r.json();if(!d.ok)throw new Error(d.error);
+  let d;try{d=await r.json()}catch(e){throw new Error('Respons bukan dari Apps Script. Periksa URL /exec dan akses "Anyone".')}
+  if(!d.ok)throw new Error(d.error);
 }
+function notif(t){banner(t);setTimeout(()=>{if($('msg').textContent===t)banner('')},3000)}
 
 function kalStatus(a){
   const d=a.kalibrasi_berikutnya;if(!d)return {k:'',t:'-'};
@@ -310,15 +314,16 @@ async function save(){
   const a={id:editId||uid()};
   ['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'].forEach(f=>a[f]=$('f_'+f).value.trim());
   const aks=[...document.querySelectorAll('#aksList .aks')].map(r=>({id:uid(),alat_id:a.id,nama:r.querySelector('.an').value.trim(),jumlah:Number(r.querySelector('.aj').value)||0,status:r.querySelector('.as').value,catatan:r.querySelector('.ac').value.trim()})).filter(k=>k.nama);
-  $('btnSave').disabled=true;
+  $('btnSave').disabled=true;$('btnSave').textContent='Menyimpan…';
   try{
     if(cfg().url)await post({action:'save',alat:a,aksesoris:aks});
     const i=ALAT.findIndex(x=>x.id===a.id);if(i>=0)ALAT[i]=a;else ALAT.push(a);
     AKS=AKS.filter(k=>k.alat_id!==a.id).concat(aks);
     if(!cfg().url)saveLocal();
     $('dlgForm').close();render();
+    if(cfg().url)notif('Tersimpan ke Google Sheet ✓');
   }catch(e){alert('Gagal menyimpan: '+e.message)}
-  $('btnSave').disabled=false;
+  $('btnSave').disabled=false;$('btnSave').textContent='Simpan';
 }
 async function del(id){
   const a=ALAT.find(x=>x.id===id);
@@ -327,6 +332,7 @@ async function del(id){
     if(cfg().url)await post({action:'delete',id});
     ALAT=ALAT.filter(x=>x.id!==id);AKS=AKS.filter(k=>k.alat_id!==id);
     if(!cfg().url)saveLocal();render();
+    if(cfg().url)notif('Terhapus dari Google Sheet ✓');
   }catch(e){alert('Gagal menghapus: '+e.message)}
 }
 function openSet(){const c=cfg();$('s_url').value=c.url;$('s_pass').value=c.pass;$('dlgSet').showModal()}
