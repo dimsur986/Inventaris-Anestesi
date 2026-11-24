@@ -218,14 +218,12 @@ h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(
 <dialog id="dlgSet">
   <div class="dh">Pengaturan koneksi</div>
   <div class="db">
-    <label>URL Web App Google Apps Script</label>
-    <input id="s_url" placeholder="https://script.google.com/macros/s/.../exec">
+    <label>URL Web App Google Apps Script (konfigurasi bersama)</label>
+    <input id="s_url" readonly>
     <div style="height:12px"></div>
-    <label>Kata sandi</label>
-    <input id="s_pass" type="password">
-    <p class="sub-p">Dikosongkan = mode lokal (data hanya tersimpan di browser ini). Pengaturan ini tersimpan di perangkat Anda, bukan di GitHub.</p>
+    <p class="sub-p">URL ini sudah ditanam pada website dan digunakan oleh semua perangkat.</p>
   </div>
-  <div class="df"><button onclick="dlgSet.close()">Batal</button><button class="pri" onclick="saveSet()">Simpan</button></div>
+  <div class="df"><button class="pri" onclick="dlgSet.close()">Tutup</button></div>
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -235,35 +233,33 @@ const STATUS_AKS=['Lengkap','Kurang','Rusak','Hilang'];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ALAT=[],AKS=[],editId=null;
-const DEFAULT_URL='';   // opsional: tempel URL Web App Apps Script (…/exec)
-const DEFAULT_PASS='';  // opsional: kata sandi (lebih aman diisi lewat tombol Pengaturan)
-const cfg=()=>({url:localStorage.getItem('inv_url')||DEFAULT_URL,pass:localStorage.getItem('inv_pass')||DEFAULT_PASS});
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyScrD9D_6MtxsiVygB9clXob8mtOVH0hHp2RaXDIEKWmq5JE7P8P73QWTMvHuJMrVeiA/exec'; // URL Web App bersama untuk semua perangkat
+const cfg=()=>({url:DEFAULT_URL}); // jangan bergantung pada localStorage perangkat
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 function banner(t){const m=$('msg');m.style.display=t?'block':'none';m.textContent=t||''}
 
 async function load(){
   const c=cfg();
-  if(!c.url){
-    try{const d=JSON.parse(localStorage.getItem('inv_local')||'{}');ALAT=d.alat||[];AKS=d.aksesoris||[]}catch(e){ALAT=[];AKS=[]}
-    banner('Mode lokal: data hanya tersimpan di browser ini. Buka Pengaturan untuk menghubungkan ke Google Sheets.');
-    return render();
+  if(!c.url || c.url==='PASTE_WEB_APP_URL_HERE'){
+    banner('Koneksi belum dikonfigurasi. Masukkan URL Web App Google Apps Script melalui Pengaturan.');
+    ALAT=[];AKS=[];render();return;
   }
-  banner('Memuat data…');
+  banner('Memuat data dari database…');
   try{
-    const r=await fetch(c.url+'?pass='+encodeURIComponent(c.pass));
+    const r=await fetch(c.url);
     const d=await r.json();
-    if(!d.ok) throw new Error(d.error);
-    ALAT=d.alat;AKS=d.aksesoris;banner('');
-  }catch(e){banner('Gagal memuat: '+e.message)}
+    if(!d.ok) throw new Error(d.error||'Gagal membaca database');
+    ALAT=d.alat||[];AKS=d.aksesoris||[];banner('');
+  }catch(e){banner('Gagal memuat: '+e.message+' — periksa URL dan deployment Apps Script.');}
   render();
 }
-function saveLocal(){localStorage.setItem('inv_local',JSON.stringify({alat:ALAT,aksesoris:AKS}))}
 async function post(body){
   const c=cfg();
-  const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,pass:c.pass})});
-  let d;try{d=await r.json()}catch(e){throw new Error('Respons bukan dari Apps Script. Periksa URL /exec dan akses "Anyone".')}
-  if(!d.ok)throw new Error(d.error);
+  if(!c.url || c.url==='PASTE_WEB_APP_URL_HERE') throw new Error('URL Web App belum dikonfigurasi.');
+  const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+  let d;try{d=await r.json()}catch(e){throw new Error('Respons bukan JSON dari Apps Script. Periksa URL /exec dan akses deployment Anyone.');}
+  if(!d.ok)throw new Error(d.error||'Operasi gagal');
 }
 function notif(t){banner(t);setTimeout(()=>{if($('msg').textContent===t)banner('')},3000)}
 
@@ -339,12 +335,12 @@ async function save(){
   const aks=[...document.querySelectorAll('#aksList .aks')].map(r=>({id:uid(),alat_id:a.id,nama:r.querySelector('.an').value.trim(),jumlah:Number(r.querySelector('.aj').value)||0,status:r.querySelector('.as').value,catatan:r.querySelector('.ac').value.trim()})).filter(k=>k.nama);
   $('btnSave').disabled=true;$('btnSave').textContent='Menyimpan…';
   try{
-    if(cfg().url)await post({action:'save',alat:a,aksesoris:aks});
+    await post({action:'save',alat:a,aksesoris:aks});
     const i=ALAT.findIndex(x=>x.id===a.id);if(i>=0)ALAT[i]=a;else ALAT.push(a);
     AKS=AKS.filter(k=>k.alat_id!==a.id).concat(aks);
-    if(!cfg().url)saveLocal();
+
     $('dlgForm').close();render();
-    if(cfg().url)notif('Tersimpan ke Google Sheet ✓');
+    notif('Tersimpan ke Google Sheet ✓');
   }catch(e){alert('Gagal menyimpan: '+e.message)}
   $('btnSave').disabled=false;$('btnSave').textContent='Simpan';
 }
@@ -352,18 +348,13 @@ async function del(id){
   const a=ALAT.find(x=>x.id===id);
   if(!confirm('Hapus "'+a.nama+'" beserta aksesorisnya?'))return;
   try{
-    if(cfg().url)await post({action:'delete',id});
+    await post({action:'delete',id});
     ALAT=ALAT.filter(x=>x.id!==id);AKS=AKS.filter(k=>k.alat_id!==id);
-    if(!cfg().url)saveLocal();render();
-    if(cfg().url)notif('Terhapus dari Google Sheet ✓');
+    render();
+    notif('Terhapus dari Google Sheet ✓');
   }catch(e){alert('Gagal menghapus: '+e.message)}
 }
-function openSet(){const c=cfg();$('s_url').value=c.url;$('s_pass').value=c.pass;$('dlgSet').showModal()}
-function saveSet(){
-  localStorage.setItem('inv_url',$('s_url').value.trim());
-  localStorage.setItem('inv_pass',$('s_pass').value);
-  $('dlgSet').close();load();
-}
+function openSet(){$('s_url').value=DEFAULT_URL;$('dlgSet').showModal()}
 // ===== Scan barcode (kamera HP) =====
 let scanner=null,scanMode='find',scanField=null;
 async function startScan(mode,field){

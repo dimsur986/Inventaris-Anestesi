@@ -1,5 +1,5 @@
 // ===== Backend Inventaris Alat Anestesi — data dari web tersusun rapi di Google Sheet =====
-const PASS  = 'anestesi2026';
+// Akses publik tanpa login sesuai permintaan. Siapa pun yang mengetahui URL Web App dapat membaca, menambah, mengubah, dan menghapus data.
 const SS_ID = '1qSm1t-602jZX2Btez3ys9fsDGTaih2D-_nYTxwn_Pwc';
 const TZ    = 'Asia/Jakarta';
 const NAVY = '#002060', YEL = '#f5b800', LINE = '#d9e0ec', SOFT = '#f5f7fb';
@@ -47,8 +47,11 @@ function parseD_(s) {
 }
 
 function doGet(e) {
-  if ((e.parameter.pass || '') !== PASS) return out_({ ok: false, error: 'Kata sandi salah' });
-  return out_({ ok: true, alat: alat_(), aksesoris: aks_() });
+  try {
+    return out_({ ok: true, alat: alat_(), aksesoris: aks_() });
+  } catch (err) {
+    return out_({ ok: false, error: String(err) });
+  }
 }
 
 function doPost(e) {
@@ -56,7 +59,6 @@ function doPost(e) {
   lock.waitLock(20000);
   try {
     const b = JSON.parse(e.postData.contents);
-    if (b.pass !== PASS) return out_({ ok: false, error: 'Kata sandi salah' });
     const sA = sh_('Alat', L_ALAT), sK = sh_('Aksesoris', L_AKS);
 
     if (b.action === 'save') {
@@ -271,5 +273,5 @@ function rebuildRekap_() {
 }
 
 function tes() {
-  Logger.log(doGet({ parameter: { pass: PASS } }).getContent());
+  Logger.log(doGet({ parameter: {} }).getContent());
 }
