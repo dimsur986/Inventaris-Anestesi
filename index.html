@@ -224,6 +224,7 @@ const API_URL='https://script.google.com/macros/s/AKfycbyScrD9D_6MtxsiVygB9clXob
 const cfg=()=>({url:API_URL});
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
+function banner(t){const m=$('msg');m.textContent=t||'';m.style.display=t?'block':'none'}
 let syncTimer=null, loading=false, saving=false;
 function jsonp(url){
   return new Promise((resolve,reject)=>{
