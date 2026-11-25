@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#002060">
 <title>Inventaris Alat – Instalasi Anestesi RSUA</title>
 <link rel="icon" href="logo.png">
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --navy:#002060;--navy2:#123a85;--yel:#f5b800;--yel-soft:#fff6d6;
@@ -149,6 +152,8 @@ h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(
     <h1>Inventaris Alat &amp; Aksesoris</h1>
     <div class="actions">
       <button onclick="openSet()">Pengaturan</button>
+      <button onclick="exportPDF()">Laporan PDF</button>
+      <button onclick="exportExcel()">Laporan Excel</button>
       <button onclick="exportCSV()">Ekspor CSV</button>
       <button class="yel" onclick="openForm()">+ Tambah alat</button>
     </div>
@@ -187,6 +192,7 @@ h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(
       <div><label>Kalibrasi terakhir</label><input type="date" id="f_kalibrasi_terakhir"></div>
       <div><label>Kalibrasi berikutnya</label><input type="date" id="f_kalibrasi_berikutnya"></div>
       <div class="full"><label>Catatan</label><textarea id="f_catatan" rows="2"></textarea></div>
+      <div class="full"><label>Nama petugas penginput / pengubah *</label><input id="f_petugas" autocomplete="name" placeholder="Masukkan nama lengkap petugas" required><div class="sub-p">Nama ini dicatat sebagai pembuat data atau petugas terakhir yang memperbarui data.</div></div>
     </div>
     <h4>Aksesoris</h4>
     <div id="aksList"></div>
@@ -212,6 +218,9 @@ const STATUS_AKS=['Lengkap','Kurang','Rusak','Hilang'];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ALAT=[],AKS=[],editId=null;
+// Backend saat ini memerlukan kata sandi bersama. Masukkan saat aplikasi dibuka; hanya disimpan selama tab aktif.
+let API_PASS=sessionStorage.getItem('inventaris_api_pass')||'';
+function ensurePass(){if(!API_PASS){API_PASS=prompt('Masukkan kata sandi koneksi Inventaris Anestesi:')||'';if(API_PASS)sessionStorage.setItem('inventaris_api_pass',API_PASS)}return API_PASS;}
 const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyScrD9D_6MtxsiVygB9clXob8mtOVH0hHp2RaXDIEKWmq5JE7P8P73QWTMvHuJMrVeiA/exec'; // URL Web App bersama untuk semua perangkat
 const cfg=()=>({url:DEFAULT_URL}); // jangan bergantung pada localStorage perangkat
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -226,9 +235,10 @@ async function load(){
   }
   banner('Memuat data dari database…');
   try{
-    const r=await fetch(c.url);
+    const pass=ensurePass();if(!pass)throw new Error('Kata sandi koneksi belum dimasukkan');
+    const r=await fetch(c.url+'?pass='+encodeURIComponent(pass));
     const d=await r.json();
-    if(!d.ok) throw new Error(d.error||'Gagal membaca database');
+    if(!d.ok){if((d.error||'').toLowerCase().includes('kata sandi')){sessionStorage.removeItem('inventaris_api_pass');API_PASS='';}throw new Error(d.error||'Gagal membaca database');}
     ALAT=d.alat||[];AKS=d.aksesoris||[];banner('');
   }catch(e){banner('Gagal memuat: '+e.message+' — periksa URL dan deployment Apps Script.');}
   render();
@@ -236,9 +246,10 @@ async function load(){
 async function post(body){
   const c=cfg();
   if(!c.url || c.url==='PASTE_WEB_APP_URL_HERE') throw new Error('URL Web App belum dikonfigurasi.');
-  const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+  const pass=ensurePass();if(!pass)throw new Error('Kata sandi koneksi belum dimasukkan');
+  const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,pass})});
   let d;try{d=await r.json()}catch(e){throw new Error('Respons bukan JSON dari Apps Script. Periksa URL /exec dan akses deployment Anyone.');}
-  if(!d.ok)throw new Error(d.error||'Operasi gagal');
+  if(!d.ok){if((d.error||'').toLowerCase().includes('kata sandi')){sessionStorage.removeItem('inventaris_api_pass');API_PASS='';}throw new Error(d.error||'Operasi gagal');}
 }
 function notif(t){banner(t);setTimeout(()=>{if($('msg').textContent===t)banner('')},3000)}
 
@@ -259,14 +270,17 @@ function fillFilters(){
   sel('fLok','Semua lokasi',lok);sel('fKon','Semua kondisi',KONDISI);
   $('lokList').innerHTML=lok.map(x=>`<option value="${esc(x)}">`).join('');
 }
-function render(){
-  fillFilters();
+function getFilteredAlat(){
   const q=$('q').value.toLowerCase(),fl=$('fLok').value,fk=$('fKon').value,fc=$('fKal').value;
-  const list=ALAT.filter(a=>{
+  return ALAT.filter(a=>{
     const aks=aksOf(a.id);
     const hay=[a.nama,a.merek,a.model,a.no_seri,a.no_inventaris,a.lokasi,...aks.map(k=>k.nama)].join(' ').toLowerCase();
     return (!q||hay.includes(q))&&(!fl||a.lokasi===fl)&&(!fk||a.kondisi===fk)&&(!fc||kalStatus(a).k===fc);
   }).sort((x,y)=>String(x.nama).localeCompare(String(y.nama)));
+}
+function render(){
+  fillFilters();
+  const list=getFilteredAlat();
   $('rows').innerHTML=list.map(a=>{
     const ks=kalStatus(a),aks=aksOf(a.id),bad=aks.filter(k=>k.status!=='Lengkap').length;
     return `<tr>
@@ -301,13 +315,17 @@ function openForm(id){
   $('fTitle').textContent=id?'Edit alat':'Tambah alat';
   $('f_kondisi').innerHTML=KONDISI.map(k=>`<option>${k}</option>`).join('');
   ['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'].forEach(f=>$('f_'+f).value=a[f]||(f==='kondisi'?'Baik':''));
+  $('f_petugas').value='';
   $('aksList').innerHTML='';
   (id?aksOf(id):[]).forEach(aksRow);
   $('dlgForm').showModal();
 }
 async function save(){
   const nama=$('f_nama').value.trim();if(!nama){alert('Nama alat wajib diisi');return}
-  const a={id:editId||uid()};
+  const petugas=$('f_petugas').value.trim();if(!petugas){alert('Nama petugas wajib diisi');$('f_petugas').focus();return}
+  const existing=editId?ALAT.find(x=>x.id===editId):null;
+  const nowIso=new Date().toISOString();
+  const a={id:editId||uid(),petugas,created_by:existing?.created_by||petugas,created_at:existing?.created_at||nowIso,updated_by:petugas,updated_at:nowIso};
   ['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'].forEach(f=>a[f]=$('f_'+f).value.trim());
   const aks=[...document.querySelectorAll('#aksList .aks')].map(r=>({id:uid(),alat_id:a.id,nama:r.querySelector('.an').value.trim(),jumlah:Number(r.querySelector('.aj').value)||0,status:r.querySelector('.as').value,catatan:r.querySelector('.ac').value.trim()})).filter(k=>k.nama);
   $('btnSave').disabled=true;$('btnSave').textContent='Menyimpan…';
@@ -332,8 +350,50 @@ async function del(id){
   }catch(e){alert('Gagal menghapus: '+e.message)}
 }
 function openSet(){$('s_url').value=DEFAULT_URL;$('dlgSet').showModal()}
+
+function reportDate(){return new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});}
+function reportRows(list){return list.map((a,i)=>({
+  no:i+1,nama:a.nama||'',merek:a.merek||'',model:a.model||'',no_inventaris:a.no_inventaris||'',no_seri:a.no_seri||'',lokasi:a.lokasi||'',kondisi:a.kondisi||'',
+  kalibrasi_terakhir:fmt(a.kalibrasi_terakhir),kalibrasi_berikutnya:fmt(a.kalibrasi_berikutnya),
+  status_kalibrasi:kalStatus(a).t,aksesoris:aksOf(a.id).map(k=>`${k.nama} (${k.jumlah}; ${k.status})`).join('\n'),
+  catatan:a.catatan||'',diinput_oleh:a.created_by||'',tanggal_input:a.created_at||'',diperbarui_oleh:a.updated_by||'',tanggal_update:a.updated_at||''
+}));}
+function exportPDF(){
+  const list=getFilteredAlat();if(!list.length){alert('Tidak ada data untuk dilaporkan.');return;}
+  if(!window.jspdf?.jsPDF){alert('Pustaka PDF belum termuat. Periksa koneksi internet lalu muat ulang halaman.');return;}
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(0,32,96);doc.text('LAPORAN INVENTARIS ALAT – INSTALASI ANESTESI RSUA',14,15);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Tanggal laporan: '+reportDate(),14,21);
+  const counts=[['Total alat',list.length],['Kondisi baik',list.filter(a=>a.kondisi==='Baik').length],['Kalibrasi lewat',list.filter(a=>kalStatus(a).k==='lewat').length],['Kalibrasi ≤30 hari',list.filter(a=>kalStatus(a).k==='segera').length]];
+  doc.text(counts.map(x=>x[0]+': '+x[1]).join('     |     '),14,27);
+  doc.autoTable({startY:32,head:[['No','Nama Alat','Merek / Model','No. Inventaris','No. Seri','Lokasi','Kondisi','Kalibrasi berikutnya','Status kalibrasi','Aksesoris','Diinput oleh','Diperbarui oleh']],
+    body:list.map((a,i)=>[i+1,a.nama,[a.merek,a.model].filter(Boolean).join(' / '),a.no_inventaris||'-',a.no_seri||'-',a.lokasi||'-',a.kondisi||'-',fmt(a.kalibrasi_berikutnya),kalStatus(a).t,aksOf(a.id).map(k=>`${k.nama} (${k.jumlah}; ${k.status})`).join('\n'),a.created_by||'-',a.updated_by||'-']),
+    styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[0,32,96]},alternateRowStyles:{fillColor:[245,247,251]},
+    didDrawPage:()=>{doc.setFontSize(8);doc.setTextColor(90);doc.text('Instalasi Anestesi RSUA',14,doc.internal.pageSize.height-7);doc.text('Halaman '+doc.internal.getNumberOfPages(),doc.internal.pageSize.width-25,doc.internal.pageSize.height-7);}
+  });
+  const y=doc.lastAutoTable.finalY+7;
+  if(y<doc.internal.pageSize.height-18){doc.setFontSize(8);doc.text('Keterangan penginput dan pembaruan tercantum pada file Excel untuk rincian administrasi.',14,y);}
+  doc.save('laporan-inventaris-anestesi-'+new Date().toISOString().slice(0,10)+'.pdf');
+}
+function exportExcel(){
+  const list=getFilteredAlat();if(!list.length){alert('Tidak ada data untuk diekspor.');return;}
+  if(!window.XLSX){alert('Pustaka Excel belum termuat. Periksa koneksi internet lalu muat ulang halaman.');return;}
+  const wb=XLSX.utils.book_new();const rows=reportRows(list);
+  const summary=[['LAPORAN INVENTARIS ALAT – INSTALASI ANESTESI RSUA'],['Tanggal laporan',reportDate()],[],['Indikator','Jumlah'],
+    ['Total alat',list.length],['Kondisi baik',list.filter(a=>a.kondisi==='Baik').length],['Perlu servis',list.filter(a=>a.kondisi==='Perlu servis').length],
+    ['Dalam perbaikan',list.filter(a=>a.kondisi==='Dalam perbaikan').length],['Rusak',list.filter(a=>a.kondisi==='Rusak').length],['Tidak aktif',list.filter(a=>a.kondisi==='Tidak aktif').length],
+    ['Kalibrasi lewat',list.filter(a=>kalStatus(a).k==='lewat').length],['Kalibrasi ≤30 hari',list.filter(a=>kalStatus(a).k==='segera').length],
+    ['Aksesoris bermasalah',list.reduce((n,a)=>n+aksOf(a.id).filter(k=>k.status!=='Lengkap').length,0)]];
+  const ws0=XLSX.utils.aoa_to_sheet(summary);ws0['!cols']=[{wch:28},{wch:22}];XLSX.utils.book_append_sheet(wb,ws0,'Ringkasan');
+  const alatData=rows.map(r=>({No:r.no,'Nama Alat':r.nama,'Merek':r.merek,'Model':r.model,'No. Inventaris':r.no_inventaris,'No. Seri':r.no_seri,'Lokasi':r.lokasi,'Kondisi':r.kondisi,'Kalibrasi Terakhir':r.kalibrasi_terakhir,'Kalibrasi Berikutnya':r.kalibrasi_berikutnya,'Status Kalibrasi':r.status_kalibrasi,'Catatan':r.catatan,'Diinput Oleh':r.diinput_oleh,'Tanggal Input':r.tanggal_input,'Diperbarui Oleh':r.diperbarui_oleh,'Tanggal Update':r.tanggal_update}));
+  const ws1=XLSX.utils.json_to_sheet(alatData);ws1['!cols']=[{wch:6},{wch:26},{wch:16},{wch:16},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},{wch:20},{wch:20},{wch:30},{wch:22},{wch:22},{wch:22},{wch:22}];XLSX.utils.book_append_sheet(wb,ws1,'Inventaris Alat');
+  const aksData=list.flatMap(a=>aksOf(a.id).map(k=>({'ID Alat':a.id,'Nama Alat':a.nama,'Nama Aksesoris':k.nama,'Jumlah':k.jumlah,'Status':k.status,'Catatan':k.catatan||''})));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(aksData.length?aksData:[{'ID Alat':'','Nama Alat':'','Nama Aksesoris':'','Jumlah':'','Status':'','Catatan':''}]),'Aksesoris');
+  const kalData=rows.map(r=>({'Nama Alat':r.nama,'No. Inventaris':r.no_inventaris,'Lokasi':r.lokasi,'Kalibrasi Terakhir':r.kalibrasi_terakhir,'Kalibrasi Berikutnya':r.kalibrasi_berikutnya,'Status Kalibrasi':r.status_kalibrasi}));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(kalData),'Kalibrasi');
+  XLSX.writeFile(wb,'laporan-inventaris-anestesi-'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
 function exportCSV(){
-  const cols=['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'];
+  const cols=['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan','created_by','created_at','updated_by','updated_at'];
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   const lines=[[...cols,'aksesoris'].map(q).join(',')];
   ALAT.forEach(a=>lines.push([...cols.map(c=>a[c]),aksOf(a.id).map(k=>`${k.nama} (${k.jumlah}, ${k.status})`).join('; ')].map(q).join(',')));
