@@ -433,7 +433,15 @@ function exportPDF(){
   if(y<doc.internal.pageSize.height-18){doc.setFontSize(8);doc.text('Keterangan penginput dan pembaruan tercantum pada file Excel untuk rincian administrasi.',14,y);}
   doc.save('laporan-inventaris-anestesi-'+new Date().toISOString().slice(0,10)+'.pdf');
 }
-function exportExcel(){
+function exportExcel() {
+    const spreadsheetId = 
+        "1qSm1t-602jZX2Btez3ys9fsDGTaih2D-_nYTxwn_Pwc";
+
+    const exportUrl =
+        `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=xlsx`;
+
+    window.open(exportUrl, "_blank");
+}
   const list=getFilteredAlat();if(!list.length){alert('Tidak ada data untuk diekspor.');return;}
   if(!window.XLSX){alert('Pustaka Excel belum termuat. Periksa koneksi internet lalu muat ulang halaman.');return;}
   const wb=XLSX.utils.book_new();const rows=reportRows(list);
