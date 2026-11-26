@@ -63,6 +63,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);bo
 
 /* ===== Filter ===== */
 .tools{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.combo-panel[hidden],.chips[hidden]{display:none}
+.combo{position:relative}
+.combo input{padding-right:30px;text-overflow:ellipsis}
+.combo::after{content:"▾";position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none}
+.combo-panel{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:15;margin:0;padding:4px;list-style:none;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,32,96,.18);max-height:260px;overflow:auto}
+.combo-panel li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 10px;border-radius:8px;cursor:pointer}
+.combo-panel li small{color:var(--mut);font-size:12px}
+.combo-panel li.hi{background:var(--soft)}
+.combo-panel li.sel{background:var(--yel-soft);font-weight:700}
+.combo-panel li.combo-empty{cursor:default;color:var(--mut);justify-content:flex-start}
+.chips{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.chip{flex:0 0 auto;min-height:34px;padding:4px 14px;border-radius:999px;font-size:13px}
+.chip.on{background:var(--navy);color:#fff;box-shadow:inset 0 -3px 0 var(--yel)}
+.chip.on:hover{background:var(--navy2)}
+.listhead{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;margin:0 0 8px}
+.listhead h2{margin:0;font-size:15px}
+.listhead h2::before{content:"";display:inline-block;width:4px;height:14px;background:var(--yel);margin-right:8px;vertical-align:-2px;border-radius:2px}
+.listhead span{color:var(--mut);font-size:13px}
 
 /* ===== Tabel ===== */
 .wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
@@ -164,7 +182,11 @@ h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(
 
   <div class="tools">
     <input id="q" type="search" placeholder="Cari nama, merek, no. seri, aksesoris..." oninput="render()">
-    <select id="fLok" onchange="render()"></select>
+    <div class="combo" id="lokCombo">
+      <input id="lokInput" type="text" role="combobox" aria-label="Filter lokasi" aria-expanded="false" aria-controls="lokPanel" aria-autocomplete="list" autocomplete="off" placeholder="Semua lokasi">
+      <ul class="combo-panel" id="lokPanel" role="listbox" hidden></ul>
+      <input type="hidden" id="fLok" value="">
+    </div>
     <select id="fKon" onchange="render()"></select>
     <select id="fKal" onchange="render()">
       <option value="">Semua kalibrasi</option>
@@ -172,6 +194,9 @@ h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(
       <option value="segera">≤ 30 hari lagi</option>
     </select>
   </div>
+
+  <div class="chips" id="lokChips" role="group" aria-label="Pilihan cepat lokasi" hidden></div>
+  <div class="listhead"><h2 id="listTitle">Inventaris Semua Lokasi</h2><span id="listCount" aria-live="polite"></span></div>
 
   <div class="wrap"><table>
     <thead><tr><th>Alat</th><th>No. inventaris / seri</th><th>Lokasi</th><th>Kondisi</th><th>Kalibrasi berikutnya</th><th>Aksesoris</th><th></th></tr></thead>
@@ -324,18 +349,76 @@ const fmt=d=>{if(!d)return '-';const [y,m,dd]=d.split('-');return dd+'/'+m+'/'+y
 const aksOf=id=>AKS.filter(k=>k.alat_id===id);
 const kondCls=k=>k==='Baik'?'b-ok':k==='Perlu servis'||k==='Dalam perbaikan'?'b-warn':k==='Rusak'?'b-bad':'';
 
-function fillFilters(){
-  const lok=[...new Set(ALAT.map(a=>a.lokasi).filter(Boolean))].sort();
-  const sel=(id,first,arr)=>{const cur=$(id).value;$(id).innerHTML=`<option value="">${first}</option>`+arr.map(x=>`<option>${esc(x)}</option>`).join('');$(id).value=cur};
-  sel('fLok','Semua lokasi',lok);sel('fKon','Semua kondisi',KONDISI);
-  $('lokList').innerHTML=lok.map(x=>`<option value="${esc(x)}">`).join('');
+/* ===== Filter lokasi: hanya mengubah tampilan, tidak menyentuh data/backend ===== */
+const KOSONG='__tanpa_lokasi__',MAX_CHIPS=8;
+const cleanLok=s=>String(s==null?'':s).normalize('NFKC').replace(/\s+/g,' ').trim();
+const normLok=s=>cleanLok(s).toLowerCase();
+const lokKey=a=>normLok(a.lokasi)||KOSONG;   // pencocokan nilai tepat (bukan substring)
+const curLok=()=>$('fLok').value;
+let LOCS=[],lokItems=[],lokHi=0,lokTyped=false,chipSig='';
+function buildLocs(){
+  const m=new Map();
+  ALAT.forEach(a=>{const k=lokKey(a);let o=m.get(k);if(!o){o={key:k,label:k===KOSONG?'Tanpa lokasi':cleanLok(a.lokasi),n:0};m.set(k,o)}o.n++});
+  return [...m.values()].sort((x,y)=>(x.key===KOSONG)-(y.key===KOSONG)||x.label.localeCompare(y.label,'id',{numeric:true,sensitivity:'base'}));
 }
+const lokLabel=k=>k?((LOCS.find(l=>l.key===k)||{}).label||''):'Semua lokasi';
+function fillFilters(){
+  LOCS=buildLocs();
+  if(curLok()&&!LOCS.some(l=>l.key===curLok()))$('fLok').value='';  // lokasi sudah tidak ada di data
+  const sel=(id,first,arr)=>{const cur=$(id).value;$(id).innerHTML=`<option value="">${first}</option>`+arr.map(x=>`<option>${esc(x)}</option>`).join('');$(id).value=cur};
+  sel('fKon','Semua kondisi',KONDISI);
+  $('lokList').innerHTML=LOCS.filter(l=>l.key!==KOSONG).map(l=>`<option value="${esc(l.label)}">`).join('');
+  drawLok();
+}
+function drawLok(){
+  const inp=$('lokInput');
+  if(document.activeElement!==inp)inp.value=lokLabel(curLok());
+  const box=$('lokChips'),show=LOCS.length>1&&LOCS.length<=MAX_CHIPS;
+  box.hidden=!show;
+  const sig=show?curLok()+'|'+LOCS.map(l=>l.key+'='+l.label).join('|'):'';
+  if(show&&sig!==chipSig){
+    chipSig=sig;
+    box.innerHTML=[{key:'',label:'Semua'}].concat(LOCS).map(l=>`<button type="button" class="chip${l.key===curLok()?' on':''}" data-key="${esc(l.key)}" aria-pressed="${l.key===curLok()}">${esc(l.label)}</button>`).join('');
+  }
+  if(!$('lokPanel').hidden)drawPanel();
+}
+function drawPanel(){
+  const q=lokTyped?normLok($('lokInput').value):'',items=[];
+  if(!q||'semua lokasi'.includes(q))items.push({key:'',label:'Semua lokasi',n:ALAT.length});
+  LOCS.forEach(l=>{if(!q||normLok(l.label).includes(q))items.push(l)});
+  lokItems=items;if(lokHi>=items.length)lokHi=Math.max(items.length-1,0);
+  $('lokPanel').innerHTML=items.length?items.map((o,i)=>`<li role="option" data-key="${esc(o.key)}" class="${o.key===curLok()?'sel':''}${i===lokHi?' hi':''}" aria-selected="${o.key===curLok()}"><span>${esc(o.label)}</span><small>${o.n}</small></li>`).join('')
+    :`<li class="combo-empty" role="option" aria-disabled="true">Lokasi “${esc($('lokInput').value.trim())}” tidak ditemukan</li>`;
+}
+function scrollHi(){const s=$('lokPanel').querySelector('.hi');if(s&&s.scrollIntoView)s.scrollIntoView({block:'nearest'})}
+function openLok(){
+  const p=$('lokPanel');
+  if(p.hidden){p.hidden=false;$('lokInput').setAttribute('aria-expanded','true');lokTyped=false;lokHi=curLok()?LOCS.findIndex(l=>l.key===curLok())+1:0}
+  drawPanel();scrollHi();
+}
+function closeLok(){$('lokPanel').hidden=true;$('lokInput').setAttribute('aria-expanded','false');lokTyped=false;$('lokInput').value=lokLabel(curLok())}
+function pickLok(key){$('fLok').value=key;closeLok();$('lokInput').blur();render()}
+(function(){
+  const li=$('lokInput'),p=$('lokPanel');
+  li.addEventListener('focus',()=>{li.select();openLok()});
+  li.addEventListener('click',()=>{if(p.hidden)openLok()});
+  li.addEventListener('blur',closeLok);
+  li.addEventListener('input',()=>{if(p.hidden)openLok();lokTyped=true;lokHi=0;drawPanel()});
+  li.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(p.hidden)openLok();else{lokHi=(lokHi+(e.key==='ArrowDown'?1:-1)+lokItems.length)%Math.max(lokItems.length,1);drawPanel();scrollHi()}}
+    else if(e.key==='Enter'){e.preventDefault();if(!p.hidden&&lokItems[lokHi])pickLok(lokItems[lokHi].key)}
+    else if(e.key==='Escape'){closeLok();li.blur()}
+  });
+  p.addEventListener('mousedown',e=>e.preventDefault());
+  p.addEventListener('click',e=>{const o=e.target.closest('li[data-key]');if(o)pickLok(o.dataset.key)});
+  $('lokChips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b)pickLok(b.dataset.key)});
+})();
 function getFilteredAlat(){
-  const q=$('q').value.toLowerCase(),fl=$('fLok').value,fk=$('fKon').value,fc=$('fKal').value;
+  const q=$('q').value.trim().toLowerCase(),fl=curLok(),fk=$('fKon').value,fc=$('fKal').value;
   return ALAT.filter(a=>{
     const aks=aksOf(a.id);
     const hay=[a.nama,a.merek,a.model,a.no_seri,a.no_inventaris,a.lokasi,...aks.map(k=>k.nama)].join(' ').toLowerCase();
-    return (!q||hay.includes(q))&&(!fl||a.lokasi===fl)&&(!fk||a.kondisi===fk)&&(!fc||kalStatus(a).k===fc);
+    return (!q||hay.includes(q))&&(!fl||lokKey(a)===fl)&&(!fk||a.kondisi===fk)&&(!fc||kalStatus(a).k===fc);
   }).sort((x,y)=>String(x.nama).localeCompare(String(y.nama)));
 }
 function render(){
@@ -352,6 +435,10 @@ function render(){
       <td data-label="Aksesoris"><div>${aks.length} item${bad?` <span class="badge b-warn">${bad} bermasalah</span>`:''}<div class="sub">${esc(aks.slice(0,3).map(k=>k.nama).join(', '))}${aks.length>3?'…':''}</div></div></td>
       <td class="c-act"><button class="sm" onclick="openForm('${a.id}')">Edit</button> <button class="sm bad" onclick="del('${a.id}')">Hapus</button></td></tr>`;
   }).join('');
+  const lk=curLok(),base=lk?ALAT.filter(a=>lokKey(a)===lk):ALAT;
+  $('listTitle').textContent=lk?'Inventaris '+(lk===KOSONG?'Tanpa Lokasi':'Lokasi '+lokLabel(lk)):'Inventaris Semua Lokasi';
+  $('listCount').textContent='Menampilkan '+list.length+' alat'+(list.length<base.length?' (dari '+base.length+' alat'+(lk?' di lokasi ini':'')+')':'')+'.';
+  $('empty').textContent=ALAT.length?'Tidak ada alat yang cocok dengan filter yang dipilih.':'Belum ada data. Klik “+ Tambah alat”.';
   $('empty').style.display=list.length?'none':'block';
   const lewat=ALAT.filter(a=>kalStatus(a).k==='lewat').length,segera=ALAT.filter(a=>kalStatus(a).k==='segera').length;
   const aksBad=AKS.filter(k=>k.status!=='Lengkap').length;
