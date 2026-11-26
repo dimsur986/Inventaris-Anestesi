@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#002060">
+<meta name="theme-color" content="#0a2e65">
 <title>Inventaris Alat – Instalasi Anestesi RSUA</title>
 <link rel="icon" href="logo.png">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -12,8 +12,8 @@
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <style>
 :root{
-  --navy:#002060;--navy2:#123a85;--yel:#f5b800;--yel-soft:#fff6d6;
-  --bg:#ffffff;--tx:#002060;--mut:#55648a;--line:#d9e0ec;--soft:#f5f7fb;
+  --navy:#0a2e65;--navy2:#1a4486;--yel:#f5b800;--yel-soft:#fff6d6;
+  --bg:#f4f6fa;--tx:#0a2e65;--mut:#5a6785;--line:#d9e0ec;--soft:#eef2f8;
   --ok:#17803d;--ok-bg:#e4f5ea;--warn:#8a5d00;--warn-bg:#fff0c2;--bad:#b42318;--bad-bg:#fde8e6;
 }
 *{box-sizing:border-box}
@@ -61,22 +61,33 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);bo
 .stat b{display:block;font-size:26px;line-height:1.1}
 .stat span{color:var(--mut);font-size:12px}
 
-/* ===== Filter ===== */
-.tools{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px}
-.combo-panel[hidden],.chips[hidden]{display:none}
-.combo{position:relative}
-.combo input{padding-right:30px;text-overflow:ellipsis}
-.combo::after{content:"▾";position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none}
-.combo-panel{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:15;margin:0;padding:4px;list-style:none;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,32,96,.18);max-height:260px;overflow:auto}
-.combo-panel li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 10px;border-radius:8px;cursor:pointer}
-.combo-panel li small{color:var(--mut);font-size:12px}
-.combo-panel li.hi{background:var(--soft)}
-.combo-panel li.sel{background:var(--yel-soft);font-weight:700}
-.combo-panel li.combo-empty{cursor:default;color:var(--mut);justify-content:flex-start}
-.chips{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
-.chip{flex:0 0 auto;min-height:34px;padding:4px 14px;border-radius:999px;font-size:13px}
-.chip.on{background:var(--navy);color:#fff;box-shadow:inset 0 -3px 0 var(--yel)}
-.chip.on:hover{background:var(--navy2)}
+/* ===== Ekspor (dropdown) ===== */
+.dd{position:relative}
+.dd-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:25;min-width:190px;padding:4px;background:#fff;border:1.5px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(10,46,101,.18)}
+.dd-menu button{display:block;width:100%;text-align:left;border:0;border-radius:8px;min-height:38px;font-weight:500}
+/* ===== Lokasi & pencarian ===== */
+.locs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.loc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:0;padding:10px 14px;border:1px solid var(--line);border-bottom:3px solid var(--line);border-radius:12px;background:#fff;text-align:left}
+.loc b{font-size:16px}
+.loc span{font-size:12px;font-weight:500;color:var(--mut)}
+.loc:hover{background:#fff;border-bottom-color:var(--yel)}
+.loc.on{background:var(--navy);border-color:var(--navy);border-bottom-color:var(--yel)}
+.loc.on b,.loc.on span{color:#fff}
+.search{margin-bottom:16px}
+.search input{min-height:48px;border-radius:12px}
+/* ===== Daftar: tersembunyi / terbuka ===== */
+.hs{margin:0 0 14px;padding:26px 18px;text-align:center;background:#fff;border:1.5px dashed var(--line);border-radius:14px}
+.hs p{margin:0 auto 14px;max-width:560px;color:var(--mut)}
+.hs p b{display:block;margin-bottom:2px;font-size:15px;color:var(--navy)}
+.hs button{min-width:min(100%,320px);letter-spacing:.3px}
+.hs.open{padding:0;border:0;background:none;text-align:right}
+.hs.open p{display:none}
+.hs.open button{min-width:0}
+.collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease}
+.collapse.open{grid-template-rows:1fr}
+.collapse>div{overflow:hidden;min-height:0}
+.lfilters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+@media(prefers-reduced-motion:reduce){.collapse{transition:none}}
 .listhead{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;margin:0 0 8px}
 .listhead h2{margin:0;font-size:15px}
 .listhead h2::before{content:"";display:inline-block;width:4px;height:14px;background:var(--yel);margin-right:8px;vertical-align:-2px;border-radius:2px}
@@ -115,8 +126,6 @@ h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(
 /* ===== Layar kecil (HP) ===== */
 @media(max-width:860px){
   .cards{grid-template-columns:repeat(3,1fr)}
-  .tools{grid-template-columns:1fr 1fr}
-  .tools input{grid-column:1/-1}
 }
 @media(max-width:720px){
   .brand img{height:42px}.logo-fb{height:40px}
@@ -125,7 +134,11 @@ h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(
   .unit b{font-size:16px}
   .titlebar h1{font-size:19px}
   .actions{width:100%}
-  .actions button{flex:1}
+  .actions>button,.actions .dd{flex:1}
+  .actions .dd>button{width:100%}
+  .dd-menu{left:0;right:0}
+  .hs.open{text-align:center}
+  .hs.open button{width:100%}
   .cards{grid-template-columns:repeat(2,1fr)}
   .cards .stat:last-child{grid-column:1/-1}
 
@@ -168,40 +181,49 @@ h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(
 
 <main>
   <div class="titlebar">
-    <h1>Inventaris Alat &amp; Aksesoris</h1>
+    <h1>Inventaris Alat &amp; Aksesoris – Instalasi Anestesi RSUA</h1>
     <div class="actions">
+      <div class="dd" id="exp">
+        <button type="button" id="expBtn" aria-haspopup="true" aria-expanded="false" aria-controls="expMenu" onclick="toggleExp()">Ekspor Data ▾</button>
+        <div class="dd-menu" id="expMenu" hidden>
+          <button onclick="exportPDF()">Laporan PDF</button>
+          <button onclick="exportExcel()">Laporan Excel</button>
+          <button onclick="exportCSV()">Ekspor CSV</button>
+        </div>
+      </div>
       <button onclick="openSet()">Pengaturan</button>
-      <button onclick="exportPDF()">Laporan PDF</button>
-      <button onclick="exportExcel()">Laporan Excel</button>
-      <button onclick="exportCSV()">Ekspor CSV</button>
       <button class="yel" onclick="openForm()">+ Tambah alat</button>
     </div>
   </div>
 
   <div class="cards" id="stats"></div>
 
-  <div class="tools">
-    <input id="q" type="search" placeholder="Cari nama, merek, no. seri, aksesoris..." oninput="render()">
-    <div class="combo" id="lokCombo">
-      <input id="lokInput" type="text" role="combobox" aria-label="Filter lokasi" aria-expanded="false" aria-controls="lokPanel" aria-autocomplete="list" autocomplete="off" placeholder="Semua lokasi">
-      <ul class="combo-panel" id="lokPanel" role="listbox" hidden></ul>
-      <input type="hidden" id="fLok" value="">
-    </div>
-    <select id="fKon" onchange="render()"></select>
-    <select id="fKal" onchange="render()">
+  <div class="listhead"><h2>Alat per lokasi</h2><span>Pilih lokasi untuk melihat daftar alatnya.</span></div>
+  <div class="locs" id="lokCards"></div>
+
+  <div class="search"><input id="q" type="search" aria-label="Cari alat" placeholder="Cari nama alat, merek, nomor seri, atau aksesoris..." oninput="render()"></div>
+
+  <section class="hs" id="hs">
+    <p><b>Daftar inventaris saat ini disembunyikan.</b>Gunakan pencarian di atas, pilih lokasi, atau klik tombol di bawah untuk melihat daftar lengkap.</p>
+    <button type="button" class="pri" id="btnToggle" aria-controls="listWrap" aria-expanded="false" onclick="toggleTable()">LIHAT SEMUA DAFTAR ALAT</button>
+  </section>
+
+  <div class="collapse" id="listWrap" inert><div>
+  <input type="hidden" id="fLok" value="">
+  <div class="listhead"><h2 id="listTitle">Inventaris Semua Lokasi</h2><span id="listCount" aria-live="polite"></span></div>
+  <div class="lfilters">
+    <select id="fKon" aria-label="Filter kondisi" onchange="render()"></select>
+    <select id="fKal" aria-label="Filter kalibrasi" onchange="render()">
       <option value="">Semua kalibrasi</option>
       <option value="lewat">Lewat jatuh tempo</option>
       <option value="segera">≤ 30 hari lagi</option>
     </select>
   </div>
-
-  <div class="chips" id="lokChips" role="group" aria-label="Pilihan cepat lokasi" hidden></div>
-  <div class="listhead"><h2 id="listTitle">Inventaris Semua Lokasi</h2><span id="listCount" aria-live="polite"></span></div>
-
   <div class="wrap"><table>
     <thead><tr><th>Alat</th><th>No. inventaris / seri</th><th>Lokasi</th><th>Kondisi</th><th>Kalibrasi berikutnya</th><th>Aksesoris</th><th></th></tr></thead>
     <tbody id="rows"></tbody>
   </table><div id="empty" class="empty" style="display:none">Belum ada data. Klik “+ Tambah alat”.</div></div>
+  </div></div>
 </main>
 
 <dialog id="dlgForm">
@@ -339,23 +361,38 @@ function post(body){
 function notif(t){banner(t);setTimeout(()=>{if($('msg').textContent===t)banner('')},3000)}
 
 function kalStatus(a){
-  const d=a.kalibrasi_berikutnya;if(!d)return {k:'',t:'-'};
+  const d=ymd(a.kalibrasi_berikutnya);if(!d)return {k:'',t:'-'};
   const diff=Math.floor((new Date(d+'T00:00:00')-new Date(new Date().toDateString()))/864e5);
   if(diff<0)return {k:'lewat',c:'b-bad',t:'Lewat '+(-diff)+' hari'};
   if(diff<=30)return {k:'segera',c:'b-warn',t:diff+' hari lagi'};
   return {k:'ok',c:'b-ok',t:'Aman'};
 }
-const fmt=d=>{if(!d)return '-';const [y,m,dd]=d.split('-');return dd+'/'+m+'/'+y};
+/* Normalisasi tanggal: Sheets bisa mengirim ISO (2028-11-23T17:00:00.000Z) -> tanggal WIB yyyy-mm-dd */
+function ymd(v){
+  if(!v)return '';
+  const s=String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  const d=new Date(s);
+  return isNaN(d)?'':new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+}
+const BLN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const fmt=d=>{const s=ymd(d);if(!s)return '-';const [y,m,dd]=s.split('-');return dd+' '+BLN[+m-1]+' '+y};
+/* Title Case untuk tampilan nama alat (singkatan <=3 huruf & kata bercampur huruf dipertahankan) */
+const SMALL=new Set(['dan','di','ke','untuk','dengan','yang','atau','dari']);
+const tc=s=>String(s==null?'':s).trim().replace(/[^\s\-\/()]+/g,(w,i)=>{
+  if(/\d/.test(w)||(w===w.toUpperCase()&&w.length<=3)||(w!==w.toLowerCase()&&w!==w.toUpperCase()))return w;
+  const l=w.toLowerCase();return i>0&&SMALL.has(l)?l:l[0].toUpperCase()+l.slice(1);
+});
 const aksOf=id=>AKS.filter(k=>k.alat_id===id);
 const kondCls=k=>k==='Baik'?'b-ok':k==='Perlu servis'||k==='Dalam perbaikan'?'b-warn':k==='Rusak'?'b-bad':'';
 
 /* ===== Filter lokasi: hanya mengubah tampilan, tidak menyentuh data/backend ===== */
-const KOSONG='__tanpa_lokasi__',MAX_CHIPS=8;
+const KOSONG='__tanpa_lokasi__';
 const cleanLok=s=>String(s==null?'':s).normalize('NFKC').replace(/\s+/g,' ').trim();
 const normLok=s=>cleanLok(s).toLowerCase();
 const lokKey=a=>normLok(a.lokasi)||KOSONG;   // pencocokan nilai tepat (bukan substring)
 const curLok=()=>$('fLok').value;
-let LOCS=[],lokItems=[],lokHi=0,lokTyped=false,chipSig='';
+let LOCS=[],tableOpen=false;
 function buildLocs(){
   const m=new Map();
   ALAT.forEach(a=>{const k=lokKey(a);let o=m.get(k);if(!o){o={key:k,label:k===KOSONG?'Tanpa lokasi':cleanLok(a.lokasi),n:0};m.set(k,o)}o.n++});
@@ -371,48 +408,22 @@ function fillFilters(){
   drawLok();
 }
 function drawLok(){
-  const inp=$('lokInput');
-  if(document.activeElement!==inp)inp.value=lokLabel(curLok());
-  const box=$('lokChips'),show=LOCS.length>1&&LOCS.length<=MAX_CHIPS;
-  box.hidden=!show;
-  const sig=show?curLok()+'|'+LOCS.map(l=>l.key+'='+l.label).join('|'):'';
-  if(show&&sig!==chipSig){
-    chipSig=sig;
-    box.innerHTML=[{key:'',label:'Semua'}].concat(LOCS).map(l=>`<button type="button" class="chip${l.key===curLok()?' on':''}" data-key="${esc(l.key)}" aria-pressed="${l.key===curLok()}">${esc(l.label)}</button>`).join('');
-  }
-  if(!$('lokPanel').hidden)drawPanel();
+  $('lokCards').innerHTML=LOCS.map(l=>`<button type="button" class="loc${l.key===curLok()?' on':''}" data-key="${esc(l.key)}" aria-pressed="${l.key===curLok()}"><b>${esc(l.label)}</b><span>${l.n} alat</span></button>`).join('');
 }
-function drawPanel(){
-  const q=lokTyped?normLok($('lokInput').value):'',items=[];
-  if(!q||'semua lokasi'.includes(q))items.push({key:'',label:'Semua lokasi',n:ALAT.length});
-  LOCS.forEach(l=>{if(!q||normLok(l.label).includes(q))items.push(l)});
-  lokItems=items;if(lokHi>=items.length)lokHi=Math.max(items.length-1,0);
-  $('lokPanel').innerHTML=items.length?items.map((o,i)=>`<li role="option" data-key="${esc(o.key)}" class="${o.key===curLok()?'sel':''}${i===lokHi?' hi':''}" aria-selected="${o.key===curLok()}"><span>${esc(o.label)}</span><small>${o.n}</small></li>`).join('')
-    :`<li class="combo-empty" role="option" aria-disabled="true">Lokasi “${esc($('lokInput').value.trim())}” tidak ditemukan</li>`;
+function pickLok(key){$('fLok').value=key===curLok()?'':key;if(curLok())tableOpen=true;render()}
+$('lokCards').addEventListener('click',e=>{const b=e.target.closest('.loc');if(b)pickLok(b.dataset.key)});
+/* Daftar terbuka jika: dibuka manual, ada kata kunci pencarian, atau lokasi dipilih */
+const isOpen=()=>tableOpen||!!$('q').value.trim()||!!curLok();
+function syncList(){
+  const open=isOpen(),w=$('listWrap'),b=$('btnToggle');
+  w.classList.toggle('open',open);w.inert=!open;$('hs').classList.toggle('open',open);
+  b.textContent=open?'SEMBUNYIKAN DAFTAR ALAT':'LIHAT SEMUA DAFTAR ALAT ('+ALAT.length+' item)';
+  b.setAttribute('aria-expanded',String(open));
 }
-function scrollHi(){const s=$('lokPanel').querySelector('.hi');if(s&&s.scrollIntoView)s.scrollIntoView({block:'nearest'})}
-function openLok(){
-  const p=$('lokPanel');
-  if(p.hidden){p.hidden=false;$('lokInput').setAttribute('aria-expanded','true');lokTyped=false;lokHi=curLok()?LOCS.findIndex(l=>l.key===curLok())+1:0}
-  drawPanel();scrollHi();
+function toggleTable(){
+  if(isOpen()){tableOpen=false;['q','fLok','fKon','fKal'].forEach(id=>$(id).value='')}else tableOpen=true;
+  render();
 }
-function closeLok(){$('lokPanel').hidden=true;$('lokInput').setAttribute('aria-expanded','false');lokTyped=false;$('lokInput').value=lokLabel(curLok())}
-function pickLok(key){$('fLok').value=key;closeLok();$('lokInput').blur();render()}
-(function(){
-  const li=$('lokInput'),p=$('lokPanel');
-  li.addEventListener('focus',()=>{li.select();openLok()});
-  li.addEventListener('click',()=>{if(p.hidden)openLok()});
-  li.addEventListener('blur',closeLok);
-  li.addEventListener('input',()=>{if(p.hidden)openLok();lokTyped=true;lokHi=0;drawPanel()});
-  li.addEventListener('keydown',e=>{
-    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(p.hidden)openLok();else{lokHi=(lokHi+(e.key==='ArrowDown'?1:-1)+lokItems.length)%Math.max(lokItems.length,1);drawPanel();scrollHi()}}
-    else if(e.key==='Enter'){e.preventDefault();if(!p.hidden&&lokItems[lokHi])pickLok(lokItems[lokHi].key)}
-    else if(e.key==='Escape'){closeLok();li.blur()}
-  });
-  p.addEventListener('mousedown',e=>e.preventDefault());
-  p.addEventListener('click',e=>{const o=e.target.closest('li[data-key]');if(o)pickLok(o.dataset.key)});
-  $('lokChips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b)pickLok(b.dataset.key)});
-})();
 function getFilteredAlat(){
   const q=$('q').value.trim().toLowerCase(),fl=curLok(),fk=$('fKon').value,fc=$('fKal').value;
   return ALAT.filter(a=>{
@@ -427,7 +438,7 @@ function render(){
   $('rows').innerHTML=list.map(a=>{
     const ks=kalStatus(a),aks=aksOf(a.id),bad=aks.filter(k=>k.status!=='Lengkap').length;
     return `<tr>
-      <td class="c-main" data-label="Alat"><b>${esc(a.nama)}</b><div class="sub">${esc([a.merek,a.model].filter(Boolean).join(' · '))}</div></td>
+      <td class="c-main" data-label="Alat"><b>${esc(tc(a.nama))}</b><div class="sub">${esc([a.merek,a.model].filter(Boolean).join(' · '))}</div></td>
       <td data-label="No. inventaris / seri"><div>${esc(a.no_inventaris||'-')}<div class="sub">${esc(a.no_seri||'')}</div></div></td>
       <td data-label="Lokasi">${esc(a.lokasi||'-')}</td>
       <td data-label="Kondisi"><span class="badge ${kondCls(a.kondisi)}">${esc(a.kondisi||'-')}</span></td>
@@ -444,6 +455,7 @@ function render(){
   const aksBad=AKS.filter(k=>k.status!=='Lengkap').length;
   $('stats').innerHTML=[['Total alat',ALAT.length],['Kondisi baik',ALAT.filter(a=>a.kondisi==='Baik').length],['Kalibrasi lewat',lewat],['Kalibrasi ≤30 hari',segera],['Aksesoris bermasalah',aksBad]]
     .map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  syncList();
 }
 
 function aksRow(k={}){
@@ -461,7 +473,7 @@ function openForm(id){
   const a=id?ALAT.find(x=>x.id===id):{};
   $('fTitle').textContent=id?'Edit alat':'Tambah alat';
   $('f_kondisi').innerHTML=KONDISI.map(k=>`<option>${k}</option>`).join('');
-  ['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'].forEach(f=>$('f_'+f).value=a[f]||(f==='kondisi'?'Baik':''));
+  ['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan'].forEach(f=>$('f_'+f).value=(f.startsWith('kalibrasi')?ymd(a[f]):a[f])||(f==='kondisi'?'Baik':''));
   $('f_petugas').value='';
   $('aksList').innerHTML='';
   (id?aksOf(id):[]).forEach(aksRow);
@@ -604,7 +616,7 @@ async function exportExcel(){
       const accessories=list.map(k=>'• '+(k.nama||'')+' ('+(k.jumlah??0)+', '+(k.status||'')+')').join('\n');
       const values=[
         i+1,a.nama||'',a.merek||'',a.model||'',String(a.no_inventaris||''),String(a.no_seri||''),
-        a.lokasi||'',a.kondisi||'',excelDate(a.kalibrasi_terakhir),excelDate(a.kalibrasi_berikutnya),
+        a.lokasi||'',a.kondisi||'',excelDate(ymd(a.kalibrasi_terakhir)),excelDate(ymd(a.kalibrasi_berikutnya)),
         ks.t,list.length,list.filter(k=>k.status!=='Lengkap').length,accessories,a.catatan||''
       ];
       const target=8+i,styleSource=(i%2===0?8:9);
@@ -618,7 +630,7 @@ async function exportExcel(){
       const values=[
         a.id||'',a.nama||'',a.merek||'',a.model||'',String(a.no_seri||''),
         String(a.no_inventaris||''),a.lokasi||'',a.kondisi||'',
-        excelDate(a.kalibrasi_terakhir),excelDate(a.kalibrasi_berikutnya),
+        excelDate(ymd(a.kalibrasi_terakhir)),excelDate(ymd(a.kalibrasi_berikutnya)),
         a.catatan||'',excelDate(a.updated_at)
       ];
       putExcelRow(wsA,2+i,values,i%2===0?2:3,12);
@@ -662,6 +674,12 @@ function exportCSV(){
   const b=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='inventaris-anestesi-'+new Date().toISOString().slice(0,10)+'.csv';l.click();
 }
+/* Dropdown Ekspor Data */
+function closeExp(){$('expMenu').hidden=true;$('expBtn').setAttribute('aria-expanded','false')}
+function toggleExp(){const m=$('expMenu');m.hidden=!m.hidden;$('expBtn').setAttribute('aria-expanded',String(!m.hidden))}
+$('expMenu').addEventListener('click',closeExp);
+document.addEventListener('click',e=>{if(!e.target.closest('#exp'))closeExp()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeExp()});
 load();
 if(syncTimer)clearInterval(syncTimer);
 // Sinkronisasi near-real-time: setiap 5 detik, dan saat tab kembali aktif.
