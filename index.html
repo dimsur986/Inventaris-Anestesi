@@ -48,7 +48,7 @@ button.yel{background:var(--yel);border-color:var(--yel);color:var(--navy)}
 button.yel:hover{background:#ffc928}
 button.bad{border-color:var(--bad);color:var(--bad)}
 button.sm{min-height:34px;padding:5px 11px;font-size:13px}
-button:disabled{opacity:.6;cursor:not-allowed}
+button:disabled{opacity:.6}
 
 input,select,textarea{font:inherit;font-size:16px;padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;width:100%;background:#fff;color:var(--navy);min-height:42px}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--yel-soft)}
@@ -111,10 +111,9 @@ td.c-act{white-space:nowrap}
 /* ===== Dialog ===== */
 dialog{border:0;border-radius:16px;padding:0;width:min(720px,96vw);max-height:92vh;color:var(--navy);box-shadow:0 20px 60px rgba(0,32,96,.3)}
 dialog::backdrop{background:rgba(0,32,96,.45)}
-.dh{padding:14px 18px;border-bottom:3px solid var(--yel);font-weight:800;font-size:16px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.dh-sub{font-size:12px;font-weight:500;color:var(--mut)}
+.dh{padding:14px 18px;border-bottom:3px solid var(--yel);font-weight:800;font-size:16px;background:#fff}
 .db{padding:16px 18px;overflow:auto;max-height:68vh}
-.df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;align-items:center;background:#fff;flex-wrap:wrap}
+.df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;background:#fff}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grid .full{grid-column:1/-1}
 label{font-size:12px;color:var(--mut);display:block;margin-bottom:4px;font-weight:600}
@@ -124,29 +123,24 @@ h4::before{content:"";display:inline-block;width:4px;height:14px;background:var(
 .aks button{padding:0;min-height:42px}
 .sub-p{color:var(--mut);font-size:12px}
 
-/* ===== Dialog Pratinjau Ekspor ===== */
-dialog#dlgPreview{width:min(1040px,96vw)}
-dialog#dlgPreview .db{max-height:72vh}
-.pv-meta{background:var(--soft);border:1px solid var(--line);border-left:4px solid var(--yel);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center}
-.pv-meta h3{margin:0 0 2px;font-size:15px;color:var(--navy)}
-.pv-meta .pv-info{font-size:12px;color:var(--mut)}
-.pv-file{font-size:12px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--navy);font-weight:600;word-break:break-all}
-.pv-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
-.pv-stat{background:#fff;border:1px solid var(--line);border-top:3px solid var(--yel);border-radius:10px;padding:8px 12px}
-.pv-stat b{display:block;font-size:20px;line-height:1.1}
-.pv-stat span{font-size:11.5px;color:var(--mut)}
-.pv-warn{background:var(--warn-bg);color:var(--warn);border:1px solid #f0d98a;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px}
-.pv-warn ul{margin:4px 0 0;padding-left:18px}
-.pv-note{background:var(--yel-soft);color:var(--navy);border:1px solid #f0d98a;border-radius:10px;padding:9px 12px;font-size:12px;margin-bottom:12px}
-.pv-loading{text-align:center;padding:36px 16px;color:var(--mut);font-weight:500}
-.pv-scroll{border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:44vh;background:#fff}
-.pv-table{border-collapse:collapse;width:100%;min-width:860px;font-size:12.5px}
-.pv-table th,.pv-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-.pv-table th{position:sticky;top:0;z-index:2;background:var(--navy);color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-.pv-table tbody tr:nth-child(even){background:#f8fafd}
-.pv-table tbody tr:hover{background:var(--soft)}
-.pv-foot-note{margin-top:10px;font-size:12px;color:var(--mut);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
-.df .df-left{margin-right:auto;font-size:12px;color:var(--mut)}
+/* ===== Pratinjau ekspor ===== */
+#dlgPreview{width:min(1040px,96vw)}
+#dlgPreview .dh{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#dlgPreview .df{flex-wrap:wrap}
+.pv-badge{background:var(--yel);color:var(--navy);border-radius:999px;padding:2px 12px;font-size:12px;font-weight:800;letter-spacing:.5px}
+.pv-meta{background:#fff;border:1px solid var(--line);border-left:5px solid var(--yel);border-radius:12px;padding:12px 14px;font-size:13px}
+.pv-meta>b{display:block;font-size:14px;margin-bottom:6px}
+.pv-meta .r{display:flex;gap:8px;padding:2px 0}
+.pv-meta .k{flex:0 0 120px;color:var(--mut);font-weight:600}
+.pv-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.pv-stats .stat b{font-size:22px}
+.pv-note{margin:0 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--soft);font-size:13px}
+.pv-warn{background:var(--warn-bg);border-color:#f0d98a;color:var(--warn)}
+.pv-tw{max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
+.pv-tw table{min-width:920px;font-size:12.5px}
+.pv-tw th,.pv-tw td{padding:8px 10px}
+.pv-tw th{position:sticky;top:0;z-index:1}
+.pv-ak{margin-bottom:2px}
 
 /* ===== Layar kecil (HP) ===== */
 @media(max-width:860px){
@@ -166,24 +160,22 @@ dialog#dlgPreview .db{max-height:72vh}
   .hs.open button{width:100%}
   .cards{grid-template-columns:repeat(2,1fr)}
   .cards .stat:last-child{grid-column:1/-1}
-  .pv-stats{grid-template-columns:repeat(2,1fr)}
 
   .wrap{border:0;background:transparent;overflow:visible}
-  .wrap table,.wrap thead,.wrap tbody,.wrap tr,.wrap td{display:block;width:100%}
-  .wrap thead{display:none}
-  .wrap tbody tr{background:#fff;border:1px solid var(--line);border-left:5px solid var(--yel);border-radius:12px;padding:10px 12px;margin-bottom:10px}
-  .wrap tbody tr:hover{background:#fff}
-  .wrap td{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border:0;text-align:right}
-  .wrap td::before{content:attr(data-label);color:var(--mut);font-size:12px;font-weight:600;text-align:left;flex:0 0 38%}
-  .wrap td.c-main{display:block;text-align:left;padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:4px}
-  .wrap td.c-main::before{display:none}
-  .wrap td.c-main b{font-size:16px}
-  .wrap td.c-act{justify-content:flex-end;gap:8px;padding-top:10px}
-  .wrap td.c-act::before{display:none}
-  .wrap td.c-act button{flex:1}
+  table,thead,tbody,tr,td{display:block;width:100%}
+  thead{display:none}
+  tbody tr{background:#fff;border:1px solid var(--line);border-left:5px solid var(--yel);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+  tbody tr:hover{background:#fff}
+  td{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border:0;text-align:right}
+  td::before{content:attr(data-label);color:var(--mut);font-size:12px;font-weight:600;text-align:left;flex:0 0 38%}
+  td.c-main{display:block;text-align:left;padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:4px}
+  td.c-main::before{display:none}
+  td.c-main b{font-size:16px}
+  td.c-act{justify-content:flex-end;gap:8px;padding-top:10px}
+  td.c-act::before{display:none}
+  td.c-act button{flex:1}
 
   dialog{width:100%;max-width:100%;margin:auto 0 0;border-radius:18px 18px 0 0;max-height:94vh}
-  dialog#dlgPreview{width:100%;max-width:100%}
   .db{max-height:70vh}
   .grid{grid-template-columns:1fr}
   .aks{grid-template-columns:80px 1fr 44px}
@@ -191,36 +183,34 @@ dialog#dlgPreview .db{max-height:72vh}
   .aks .ac{order:5}
   .aks button{order:4}
   .df button{flex:1}
-  .df .df-left{width:100%;margin-right:0;margin-bottom:4px}
+  #dlgPreview{width:100%}
+  #dlgPreview .df{gap:6px}
+  .pv-stats{grid-template-columns:repeat(2,1fr)}
+  .pv-meta .r{flex-direction:column;gap:0}
+  .pv-meta .k{flex:none}
+  .pv-tw table{display:table;width:auto}
+  .pv-tw thead{display:table-header-group}
+  .pv-tw tbody{display:table-row-group}
+  .pv-tw tr{display:table-row}
+  .pv-tw tbody tr{border:0;border-radius:0;padding:0;margin:0;background:none}
+  .pv-tw td{display:table-cell;width:auto;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .pv-tw td::before{display:none}
 }
-
-/* ===== Gaya Cetak Langsung dari Pratinjau ===== */
+/* ===== Cetak langsung pratinjau (A4 landscape) ===== */
 @media print{
-  @page{size:A4 landscape;margin:12mm}
-  body{background:#fff !important;color:#000 !important;font-size:11px}
-  header,#msg,main,dialog#dlgForm,dialog#dlgSet{display:none !important}
-  dialog#dlgPreview{
-    display:block !important;
-    position:static !important;
-    width:100% !important;
-    max-width:100% !important;
-    max-height:none !important;
-    box-shadow:none !important;
-    border:0 !important;
-    border-radius:0 !important;
-    margin:0 !important;
-    padding:0 !important;
-  }
-  dialog#dlgPreview::backdrop{display:none !important}
-  dialog#dlgPreview .dh{padding:0 0 8px;border-bottom:2px solid #0a2e65}
-  dialog#dlgPreview .db{padding:10px 0 0;max-height:none !important;overflow:visible !important}
-  dialog#dlgPreview .df,#pvNoteBox{display:none !important}
-  .pv-meta,.pv-stat{border:1px solid #cbd5e1 !important;background:#fff !important;break-inside:avoid}
-  .pv-scroll{border:0 !important;overflow:visible !important;max-height:none !important}
-  .pv-table{min-width:0 !important;width:100% !important;font-size:9.5px}
-  .pv-table th{position:static !important;background:#0a2e65 !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .pv-table th,.pv-table td{padding:5px 6px;border:1px solid #cbd5e1}
-  .badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4 landscape;margin:10mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  header,main,#msg,dialog:not(#dlgPreview),#dlgPreview .dh,#dlgPreview .df{display:none!important}
+  body{background:#fff}
+  dialog#dlgPreview[open]{display:block!important;position:static!important;inset:auto!important;width:auto!important;max-width:none!important;height:auto!important;max-height:none!important;margin:0!important;border-radius:0;box-shadow:none;overflow:visible}
+  #dlgPreview::backdrop{display:none}
+  #dlgPreview .db{max-height:none!important;overflow:visible;padding:0}
+  .pv-tw{max-height:none;overflow:visible;border:0}
+  .pv-tw table{min-width:0;width:100%;font-size:9px;display:table!important}
+  .pv-tw th{position:static}
+  .pv-tw thead{display:table-header-group!important}
+  .pv-tw tr{break-inside:avoid;display:table-row!important}
+  .pv-tw td{display:table-cell!important}
 }
 </style>
 </head>
@@ -243,13 +233,13 @@ dialog#dlgPreview .db{max-height:72vh}
       <div class="dd" id="exp">
         <button type="button" id="expBtn" aria-haspopup="true" aria-expanded="false" aria-controls="expMenu" onclick="toggleExp()">Ekspor Data ▾</button>
         <div class="dd-menu" id="expMenu" hidden>
-          <button type="button" onclick="openExportPreview('pdf')">Laporan PDF</button>
-          <button type="button" onclick="openExportPreview('excel')">Laporan Excel</button>
-          <button type="button" onclick="openExportPreview('csv')">Ekspor CSV</button>
+          <button onclick="exportPDF()">Laporan PDF</button>
+          <button onclick="exportExcel()">Laporan Excel</button>
+          <button onclick="exportCSV()">Ekspor CSV</button>
         </div>
       </div>
-      <button type="button" onclick="openSet()">Pengaturan</button>
-      <button type="button" class="yel" onclick="openForm()">+ Tambah alat</button>
+      <button onclick="openSet()">Pengaturan</button>
+      <button class="yel" onclick="openForm()">+ Tambah alat</button>
     </div>
   </div>
 
@@ -301,9 +291,9 @@ dialog#dlgPreview .db{max-height:72vh}
     </div>
     <h4>Aksesoris</h4>
     <div id="aksList"></div>
-    <button type="button" class="sm" onclick="addAks()">+ Tambah aksesoris</button>
+    <button class="sm" onclick="addAks()">+ Tambah aksesoris</button>
   </div>
-  <div class="df"><button type="button" onclick="dlgForm.close()">Batal</button><button type="button" class="pri" id="btnSave" onclick="save()">Simpan</button></div>
+  <div class="df"><button onclick="dlgForm.close()">Batal</button><button class="pri" id="btnSave" onclick="save()">Simpan</button></div>
 </dialog>
 
 <dialog id="dlgSet">
@@ -314,21 +304,13 @@ dialog#dlgPreview .db{max-height:72vh}
     <div style="height:12px"></div>
     <p class="sub-p">URL ini sudah ditanam pada website dan digunakan oleh semua perangkat.</p>
   </div>
-  <div class="df"><button type="button" class="pri" onclick="dlgSet.close()">Tutup</button></div>
+  <div class="df"><button class="pri" onclick="dlgSet.close()">Tutup</button></div>
 </dialog>
 
 <dialog id="dlgPreview" aria-labelledby="pvTitle">
-  <div class="dh">
-    <span id="pvTitle">Pratinjau Ekspor Data</span>
-    <span class="dh-sub" id="pvBadgeFormat"></span>
-  </div>
+  <div class="dh"><span id="pvTitle">Pratinjau Ekspor</span><span class="pv-badge" id="pvBadge">PDF</span></div>
   <div class="db" id="pvBody"></div>
-  <div class="df" id="pvFooter">
-    <span class="df-left" id="pvFooterInfo">Periksa kembali data sebelum mengunduh atau mencetak.</span>
-    <button type="button" onclick="closeExportPreview()">Batal</button>
-    <button type="button" id="btnPvPrint" style="display:none" onclick="printPreview()">Cetak</button>
-    <button type="button" class="pri" id="btnPvDownload" onclick="confirmExportDownload()">Unduh</button>
-  </div>
+  <div class="df"><button type="button" id="pvCancel" onclick="closePreview()">Batal</button><button type="button" id="pvPrint" onclick="window.print()" hidden>Cetak</button><button type="button" class="pri" id="pvDl" onclick="pvDownload()">Unduh</button></div>
 </dialog>
 
 <script>
@@ -454,7 +436,7 @@ const tc=s=>String(s==null?'':s).trim().replace(/[^\s\-\/()]+/g,(w,i)=>{
   if(/\d/.test(w)||(w===w.toUpperCase()&&w.length<=3)||(w!==w.toLowerCase()&&w!==w.toUpperCase()))return w;
   const l=w.toLowerCase();return i>0&&SMALL.has(l)?l:l[0].toUpperCase()+l.slice(1);
 });
-const aksOf=(id,srcAks=AKS)=>srcAks.filter(k=>String(k.alat_id)===String(id));
+const aksOf=id=>AKS.filter(k=>k.alat_id===id);
 const kondCls=k=>k==='Baik'?'b-ok':k==='Perlu servis'||k==='Dalam perbaikan'?'b-warn':k==='Rusak'?'b-bad':'';
 
 /* ===== Filter lokasi: hanya mengubah tampilan, tidak menyentuh data/backend ===== */
@@ -515,7 +497,7 @@ function render(){
       <td data-label="Kondisi"><span class="badge ${kondCls(a.kondisi)}">${esc(a.kondisi||'-')}</span></td>
       <td data-label="Kalibrasi berikutnya"><div>${fmt(a.kalibrasi_berikutnya)}<div>${ks.c?`<span class="badge ${ks.c}">${ks.t}</span>`:''}</div></div></td>
       <td data-label="Aksesoris"><div>${aks.length} item${bad?` <span class="badge b-warn">${bad} bermasalah</span>`:''}<div class="sub">${esc(aks.slice(0,3).map(k=>k.nama).join(', '))}${aks.length>3?'…':''}</div></div></td>
-      <td class="c-act"><button type="button" class="sm" onclick="openForm('${a.id}')">Edit</button> <button type="button" class="sm bad" onclick="del('${a.id}')">Hapus</button></td></tr>`;
+      <td class="c-act"><button class="sm" onclick="openForm('${a.id}')">Edit</button> <button class="sm bad" onclick="del('${a.id}')">Hapus</button></td></tr>`;
   }).join('');
   const lk=curLok(),base=lk?ALAT.filter(a=>lokKey(a)===lk):ALAT;
   $('listTitle').textContent=lk?'Inventaris '+(lk===KOSONG?'Tanpa Lokasi':'Lokasi '+lokLabel(lk)):'Inventaris Semua Lokasi';
@@ -535,7 +517,7 @@ function aksRow(k={}){
     <input class="aj" type="number" min="0" value="${k.jumlah==null||k.jumlah===''?1:esc(k.jumlah)}">
     <select class="as">${STATUS_AKS.map(s=>`<option${k.status===s?' selected':''}>${s}</option>`).join('')}</select>
     <input class="ac" placeholder="Catatan" value="${esc(k.catatan||'')}">
-    <button type="button" class="bad" onclick="this.parentNode.remove()">×</button>`;
+    <button class="bad" onclick="this.parentNode.remove()">×</button>`;
   $('aksList').appendChild(d);
 }
 function addAks(){aksRow()}
@@ -585,12 +567,32 @@ function reportDate(){return new Date().toLocaleDateString('id-ID',{day:'2-digit
 function reportRows(list){return list.map((a,i)=>({
   no:i+1,nama:a.nama||'',merek:a.merek||'',model:a.model||'',no_inventaris:a.no_inventaris||'',no_seri:a.no_seri||'',lokasi:a.lokasi||'',kondisi:a.kondisi||'',
   kalibrasi_terakhir:fmt(a.kalibrasi_terakhir),kalibrasi_berikutnya:fmt(a.kalibrasi_berikutnya),
-  status_kalibrasi:kalStatus(a).t,aksesoris:aksOf(a.id).map(k=>`${k.nama} (${k.jumlah}; ${k.status})`).join('
-'),
+  status_kalibrasi:kalStatus(a).t,aksesoris:aksOf(a.id).map(k=>`${k.nama} (${k.jumlah}; ${k.status})`).join('\n'),
   catatan:a.catatan||'',diinput_oleh:a.created_by||'',tanggal_input:a.created_at||'',diperbarui_oleh:a.updated_by||'',tanggal_update:a.updated_at||''
 }));}
-
-// ===== KONSTANTA TEMPLATE EXCEL =====
+function doExportPDF(list,aksOf,fileName){
+  if(!window.jspdf?.jsPDF){alert('Pustaka PDF belum termuat. Periksa koneksi internet lalu muat ulang halaman.');return false;}
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(0,32,96);doc.text('LAPORAN INVENTARIS ALAT – INSTALASI ANESTESI RSUA',14,15);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Tanggal laporan: '+reportDate(),14,21);
+  const counts=[['Total alat',list.length],['Kondisi baik',list.filter(a=>a.kondisi==='Baik').length],['Kalibrasi lewat',list.filter(a=>kalStatus(a).k==='lewat').length],['Kalibrasi ≤30 hari',list.filter(a=>kalStatus(a).k==='segera').length]];
+  doc.text(counts.map(x=>x[0]+': '+x[1]).join('     |     '),14,27);
+  doc.autoTable({startY:32,head:[['No','Nama Alat','Merek / Model','No. Inventaris','No. Seri','Lokasi','Kondisi','Kalibrasi berikutnya','Status kalibrasi','Aksesoris','Diinput oleh','Diperbarui oleh']],
+    body:list.map((a,i)=>[i+1,a.nama,[a.merek,a.model].filter(Boolean).join(' / '),a.no_inventaris||'-',a.no_seri||'-',a.lokasi||'-',a.kondisi||'-',fmt(a.kalibrasi_berikutnya),kalStatus(a).t,aksOf(a.id).map(k=>`${k.nama} (${k.jumlah}; ${k.status})`).join('\n'),a.created_by||'-',a.updated_by||'-']),
+    styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[0,32,96]},alternateRowStyles:{fillColor:[245,247,251]},
+    didDrawPage:()=>{doc.setFontSize(8);doc.setTextColor(90);doc.text('Instalasi Anestesi RSUA',14,doc.internal.pageSize.height-7);doc.text('Halaman '+doc.internal.getNumberOfPages(),doc.internal.pageSize.width-25,doc.internal.pageSize.height-7);}
+  });
+  const y=doc.lastAutoTable.finalY+7;
+  if(y<doc.internal.pageSize.height-18){doc.setFontSize(8);doc.text('Keterangan penginput dan pembaruan tercantum pada file Excel untuk rincian administrasi.',14,y);}
+  doc.save(fileName);
+  return true;
+}
+// ===== EXPORT EXCEL: mengisi template "Inventaris_Alat_Anestesi_RSUA.xlsx" =====
+// Data input ditulis apa adanya ke sheet "Alat" dan "Aksesoris" (struktur sama dengan Google Sheet).
+// Sheet 2_Master_Inventaris, 3_Monitoring_Kalibrasi, 4_Perlu_Perhatian, dan 1_Ringkasan_Dashboard
+// berisi rumus yang membaca dua sheet tersebut, sehingga setiap data yang diinput otomatis
+// masuk ke Master, Monitoring Kalibrasi, Perlu Perhatian, lalu diringkas di Dashboard.
+// File template dimodifikasi langsung di XML (JSZip) supaya grafik, logo, rumus, dan format tetap utuh.
 const TEMPLATE_XLSX='Inventaris_Alat_Anestesi_RSUA.xlsx';
 const XL_NS='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 const XL_REL_NS='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
@@ -600,7 +602,7 @@ const AKS_COLS=['id','alat_id','nama','jumlah','status','catatan'];
 const REPORT_CAP=50;     // kapasitas baris sheet laporan pada template (Master / Monitoring / Perlu Perhatian)
 const AKS_CAP=1000;      // kapasitas baris sheet Aksesoris yang dibaca rumus template
 
-const xlClean=s=>String(s==null?'':s).replace(/[ --]/g,'');
+const xlClean=s=>String(s==null?'':s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
 const xlEsc=s=>xlClean(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 function xlParse(xml){
@@ -610,10 +612,10 @@ function xlParse(xml){
 }
 function xlSerialize(d){
   let s=new XMLSerializer().serializeToString(d);
-  if(!s.startsWith('<?xml'))s='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-'+s;
+  if(!s.startsWith('<?xml'))s='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+s;
   return s;
 }
+// Cari lokasi file XML sebuah tab berdasarkan namanya (bukan nomor urut), lewat workbook.xml + rels.
 async function xlSheetPath(zip,name){
   const wbFile=zip.file('xl/workbook.xml'),relFile=zip.file('xl/_rels/workbook.xml.rels');
   if(!wbFile||!relFile)throw new Error('File template bukan workbook Excel yang valid.');
@@ -626,6 +628,8 @@ async function xlSheetPath(zip,name){
   const t=rel.getAttribute('Target').replace(/^\//,'');
   return t.startsWith('xl/')?t:'xl/'+t;
 }
+// Paksa Excel/LibreOffice menghitung ulang semua rumus saat file dibuka, supaya semua sheet laporan
+// selalu mengikuti data terbaru, bukan nilai cache template.
 async function xlForceRecalc(zip){
   const f=zip.file('xl/workbook.xml');if(!f)return;
   const wb=xlParse(await f.async('string')),root=wb.documentElement;
@@ -641,20 +645,24 @@ async function xlForceRecalc(zip){
   cp.setAttribute('calcMode','auto');
   zip.file('xl/workbook.xml',xlSerialize(wb));
 }
+
+// Tulis data ke sheet mentah (Alat / Aksesoris). Baris 1 (judul kolom) dipertahankan; baris 2 dst
+// diganti dengan `data` (array of array; string = teks, number = angka). Sisa baris lama dikosongkan.
+// Murni manipulasi teks XML, gaya sel (s=) dari template dipertahankan.
 function xlWriteRawRows(xml,data,nCols){
   const a=xml.indexOf('<sheetData>'),b=xml.indexOf('</sheetData>');
   if(a<0||b<0)throw new Error('Struktur sheet template tidak dikenali.');
   const head=xml.slice(0,a+11),body=xml.slice(a+11,b),tail=xml.slice(b);
   const rows=new Map();
-  const rowRe=/<row[^>]*?\/>|<row[^>]*?>[\s\S]*?<\/row>/g;
+  const rowRe=/<row\b[^>]*?\/>|<row\b[^>]*?>[\s\S]*?<\/row>/g;
   let m;
-  while((m=rowRe.exec(body))){rows.set(+/r="(\d+)"/.exec(m[0])[1],m[0]);}
+  while((m=rowRe.exec(body))){rows.set(+/\br="(\d+)"/.exec(m[0])[1],m[0]);}
   const colName=i=>String.fromCharCode(65+i);
   const styleOf=(rowXml,col)=>{
-    const mm=new RegExp('<c r="'+col+'\d+"[^>]*?\bs="(\d+)"').exec(rowXml||'');
+    const mm=new RegExp('<c r="'+col+'\\d+"[^>]*?\\bs="(\\d+)"').exec(rowXml||'');
     return mm?mm[1]:'';
   };
-  const dataStyle=[];
+  const dataStyle=[];                               // gaya sel baris data diambil dari baris 2 template
   for(let i=0;i<nCols;i++)dataStyle.push(styleOf(rows.get(2),colName(i)));
   const cell=(col,r,val,s)=>{
     const sa=s?' s="'+s+'"':'';
@@ -664,7 +672,7 @@ function xlWriteRawRows(xml,data,nCols){
   };
   const openTag=(r)=>{
     const old=rows.get(r);
-    if(old){const t=/^<row([^>]*?)\/?>/.exec(old)[1];return '<row'+t+'>';}
+    if(old){const t=/^<row\b([^>]*?)\/?>/.exec(old)[1];return '<row'+t+'>';}
     return '<row r="'+r+'">';
   };
   const lastOld=Math.max(1,...rows.keys());
@@ -676,7 +684,7 @@ function xlWriteRawRows(xml,data,nCols){
       for(let i=0;i<nCols;i++)x+=cell(colName(i),r,d[i],dataStyle[i]);
       rows.set(r,x+'</row>');
     }else if(rows.has(r)&&/<v>|<is>/.test(rows.get(r))){
-      let x=openTag(r);
+      let x=openTag(r);                               // kosongkan isi lama, pertahankan gaya
       for(let i=0;i<nCols;i++)x+=cell(colName(i),r,'',styleOf(rows.get(r),colName(i)));
       rows.set(r,x+'</row>');
     }
@@ -686,382 +694,170 @@ function xlWriteRawRows(xml,data,nCols){
 }
 const naturalCmp=(x,y)=>String(x).localeCompare(String(y),'id',{numeric:true,sensitivity:'base'});
 
-// ===== STATE & ALUR PRATINJAU SEBELUM UNDUH / CETAK =====
-let previewState=null;
+const today=()=>new Date().toISOString().slice(0,10);
+const PV_META={
+  pdf:{t:'Pratinjau Laporan PDF',b:'PDF',d:'Unduh PDF',f:()=>'laporan-inventaris-anestesi-'+today()+'.pdf'},
+  xlsx:{t:'Pratinjau Laporan Excel',b:'XLSX',d:'Unduh Excel (.xlsx)',f:()=>'Inventaris-Alat-Anestesi-RSUA-'+today()+'.xlsx'},
+  csv:{t:'Pratinjau Ekspor CSV',b:'CSV',d:'Unduh CSV',f:()=>'inventaris-anestesi-'+today()+'.csv'}};
+const PV={mode:'',list:[],map:new Map(),tpl:null,snap:null,file:'',token:0,busy:false};
+const pvAks=id=>PV.map.get(String(id))||[];
 
-function getActiveFilterDesc(){
-  const parts=[];
-  const lk=curLok();
-  if(lk)parts.push('Lokasi: '+(lk===KOSONG?'Tanpa lokasi':lokLabel(lk)));
-  const fk=$('fKon').value;
-  if(fk)parts.push('Kondisi: '+fk);
-  const fc=$('fKal').value;
-  if(fc)parts.push('Kalibrasi: '+(fc==='lewat'?'Lewat jatuh tempo':'≤ 30 hari lagi'));
-  const q=$('q').value.trim();
-  if(q)parts.push('Kata kunci: "'+q+'"');
-  return parts.length?parts.join(' · '):'Semua data (tanpa filter)';
+function pvShell(mode){
+  const m=PV_META[mode];
+  Object.assign(PV,{mode,list:[],map:new Map(),tpl:null,snap:null,file:m.f()});PV.token++;
+  $('pvTitle').textContent=m.t;$('pvBadge').textContent=m.b;$('pvDl').textContent=m.d;
+  $('pvDl').disabled=true;$('pvPrint').hidden=mode!=='pdf';$('pvPrint').disabled=true;$('pvCancel').disabled=false;
+  $('pvBody').innerHTML='<div class="empty" role="status">Menyiapkan pratinjau…</div>';
+  if(!$('dlgPreview').open)$('dlgPreview').showModal();
 }
+function closePreview(){if($('dlgPreview').open)$('dlgPreview').close()}
+$('dlgPreview').addEventListener('cancel',e=>{if(PV.busy)e.preventDefault()});
+$('dlgPreview').addEventListener('close',()=>{PV.token++;PV.tpl=null;PV.snap=null;});
 
-function closeExportPreview(){
-  previewState=null;
-  if($('dlgPreview').open)$('dlgPreview').close();
-}
-
-function printPreview(){
-  if(!previewState || previewState.type!=='pdf')return;
-  window.print();
-}
-
-async function openExportPreview(type){
-  closeExp();
-  const todayStr=new Date().toISOString().slice(0,10);
-
-  if(type==='pdf' || type==='csv'){
-    const list=type==='pdf'?getFilteredAlat():ALAT.slice().sort((x,y)=>String(x.nama).localeCompare(String(y.nama)));
-    if(!list.length){
-      alert('Tidak ada data alat untuk diekspor.');
-      return;
-    }
-    const fileName=type==='pdf'
-      ?'laporan-inventaris-anestesi-'+todayStr+'.pdf'
-      :'inventaris-anestesi-'+todayStr+'.csv';
-
-    previewState={
-      type,
-      fileName,
-      alat:list,
-      aks:AKS.slice(),
-      warn:[],
-      scopeText:type==='pdf'?getActiveFilterDesc():'Seluruh database inventaris ('+list.length+' alat)'
-    };
-    renderExportPreview();
-    $('dlgPreview').showModal();
-    return;
-  }
-
-  if(type==='excel'){
-    if(!window.JSZip){
-      alert('Library JSZip belum termuat. Periksa koneksi internet lalu muat ulang halaman.');
-      return;
-    }
-    if(saving){
-      alert('Masih ada proses simpan/hapus yang berjalan. Tunggu beberapa detik lalu ekspor lagi.');
-      return;
-    }
-
-    // Tampilkan dialog pratinjau segera dalam status memuat snapshot terbaru dari Google Sheets
-    previewState={type:'excel',loading:true};
-    $('pvTitle').textContent='Pratinjau Laporan Excel';
-    $('pvBadgeFormat').textContent='XLSX (Template RSUA)';
-    $('pvBody').innerHTML='<div class="pv-loading">Mengambil snapshot data terbaru dari Google Sheets &amp; memeriksa template Excel…</div>';
-    $('btnPvPrint').style.display='none';
-    $('btnPvDownload').disabled=true;
-    $('btnPvDownload').textContent='Menyiapkan…';
-    $('dlgPreview').showModal();
-
-    try{
-      const latest=await jsonp(cfg().url);
-      if(!latest||!latest.ok)throw new Error((latest&&latest.error)||'Gagal mengambil data terbaru dari Google Sheets.');
-      const alat=Array.isArray(latest.alat)?latest.alat:[];
-      const aks=Array.isArray(latest.aksesoris)?latest.aksesoris:[];
-      if(!alat.length){
-        closeExportPreview();
-        alert('Belum ada data alat untuk diekspor.');
-        return;
-      }
-
-      // Verifikasi template Excel tersedia sebelum menampilkan pratinjau final
-      const response=await fetch(new URL(TEMPLATE_XLSX,window.location.href).toString(),{cache:'no-store'});
-      if(!response.ok)throw new Error('Template '+TEMPLATE_XLSX+' tidak ditemukan. Letakkan file template di folder yang sama dengan index.html.');
-      const templateBuffer=await response.arrayBuffer();
-
-      const sorted=alat.slice().sort((a,b)=>{
-        const x=String(a.no_inventaris||'').trim(),y=String(b.no_inventaris||'').trim();
-        if(!x!==!y)return x?-1:1;
-        return naturalCmp(x,y)||naturalCmp(a.nama||'',b.nama||'');
-      });
-      const ids=new Set(sorted.map(a=>String(a.id)));
-      const aksOk=aks.filter(k=>ids.has(String(k.alat_id)));
-
-      const warn=[];
-      if(sorted.length>REPORT_CAP){
-        warn.push('Sheet laporan (Master, Monitoring Kalibrasi, Perlu Perhatian, Dashboard) pada template memuat '+REPORT_CAP+' alat pertama menurut No. Inventaris. '+(sorted.length-REPORT_CAP)+' alat lainnya tetap tersimpan di sheet Alat tetapi belum tampil di sheet laporan.');
-      }
-      if(aksOk.length>AKS_CAP){
-        warn.push('Sheet laporan hanya membaca '+AKS_CAP+' baris aksesoris pertama; '+(aksOk.length-AKS_CAP)+' baris aksesoris lainnya tidak ikut tampil di kolom Aksesoris.');
-      }
-
-      // Sinkronkan cache halaman dengan snapshot terbaru
-      ALAT=alat;AKS=aks;render();
-
-      if(!previewState || previewState.type!=='excel')return; // jika pengguna menutup dialog saat loading
-      previewState={
-        type:'excel',
-        loading:false,
-        fileName:'Inventaris-Alat-Anestesi-RSUA-'+todayStr+'.xlsx',
-        alat:sorted,
-        aks:aksOk,
-        templateBuffer,
-        warn,
-        scopeText:'Snapshot terbaru Google Sheets ('+sorted.length+' alat, '+aksOk.length+' baris aksesoris)'
-      };
-      renderExportPreview();
-    }catch(e){
-      console.error('Pratinjau Excel gagal:',e);
-      closeExportPreview();
-      alert('Gagal menyiapkan pratinjau Excel: '+e.message);
-    }
-  }
-}
-
-function renderExportPreview(){
-  if(!previewState || previewState.loading)return;
-  const {type,fileName,alat,aks,warn,scopeText}=previewState;
-
-  const titles={
-    pdf:'Pratinjau Laporan PDF',
-    excel:'Pratinjau Laporan Excel',
-    csv:'Pratinjau Ekspor CSV'
-  };
-  const badges={
-    pdf:'PDF Landscape A4',
-    excel:'Excel (.xlsx) + Rumus Template',
-    csv:'CSV (UTF-8 BOM)'
-  };
-  const dlLabels={
-    pdf:'Unduh PDF',
-    excel:'Unduh Excel (.xlsx)',
-    csv:'Unduh CSV'
-  };
-
-  $('pvTitle').textContent=titles[type];
-  $('pvBadgeFormat').textContent=badges[type];
-  $('btnPvPrint').style.display=type==='pdf'?'inline-block':'none';
-  $('btnPvDownload').disabled=false;
-  $('btnPvDownload').textContent=dlLabels[type];
-  $('pvFooterInfo').textContent=type==='pdf'
-    ?'Gunakan tombol Cetak untuk mencetak langsung atau Unduh PDF untuk menyimpan berkas.'
-    :'Periksa kesesuaian baris data sebelum mengunduh berkas.';
-
-  const total=alat.length;
-  const baik=alat.filter(a=>a.kondisi==='Baik').length;
-  const lewat=alat.filter(a=>kalStatus(a).k==='lewat').length;
-  const segera=alat.filter(a=>kalStatus(a).k==='segera').length;
-
-  const warnHtml=warn&&warn.length
-    ?`<div class="pv-warn"><b>Catatan Kapasitas Template:</b><ul>${warn.map(w=>'<li>'+esc(w)+'</li>').join('')}</ul></div>`
-    :'';
-
-  const excelNoteHtml=type==='excel'
-    ?`<div class="pv-note" id="pvNoteBox"><b>Info Template Excel:</b> Data di bawah akan diisikan ke sheet <code>Alat</code> dan <code>Aksesoris</code> pada template <b>${esc(TEMPLATE_XLSX)}</b>. Sheet <i>Dashboard, Master Inventaris, Monitoring Kalibrasi,</i> dan <i>Perlu Perhatian</i> akan dihitung otomatis saat file dibuka di Excel/LibreOffice.</div>`
-    :'';
-
-  const rowsHtml=alat.map((a,i)=>{
-    const ks=kalStatus(a);
-    const listAks=aksOf(a.id,aks);
-    const aksText=listAks.length
-      ?listAks.map(k=>`${esc(k.nama)} (${esc(k.jumlah)}; ${esc(k.status)})`).join('<br>')
-      :'<span class="sub">-</span>';
-    const petugasText=[
-      a.created_by?'Input: '+esc(a.created_by):'',
-      a.updated_by?'Update: '+esc(a.updated_by):''
-    ].filter(Boolean).join('<br>')||'-';
-
-    return `<tr>
-      <td>${i+1}</td>
-      <td><b>${esc(tc(a.nama))}</b><div class="sub">${esc([a.merek,a.model].filter(Boolean).join(' / ')||'-')}</div></td>
-      <td><div>${esc(a.no_inventaris||'-')}</div><div class="sub">${esc(a.no_seri||'')}</div></td>
+function pvShow(list,aks,scope,notes){
+  PV.list=list;PV.map=new Map();
+  aks.forEach(k=>{const x=String(k.alat_id);if(!PV.map.has(x))PV.map.set(x,[]);PV.map.get(x).push(k)});
+  const cnt=[['Total alat diekspor',list.length],['Kondisi baik',list.filter(a=>a.kondisi==='Baik').length],['Kalibrasi lewat',list.filter(a=>kalStatus(a).k==='lewat').length],['Kalibrasi ≤ 30 hari',list.filter(a=>kalStatus(a).k==='segera').length]];
+  const dash='<span class="sub">-</span>';
+  const rows=list.map((a,i)=>{
+    const ks=kalStatus(a),aks=pvAks(a.id);
+    return `<tr><td>${i+1}</td>
+      <td><b>${esc(a.nama||'-')}</b><div class="sub">${esc([a.merek,a.model].filter(Boolean).join(' / ')||'-')}</div></td>
+      <td>${esc(a.no_inventaris||'-')}<div class="sub">${esc(a.no_seri||'-')}</div></td>
       <td>${esc(a.lokasi||'-')}</td>
       <td><span class="badge ${kondCls(a.kondisi)}">${esc(a.kondisi||'-')}</span></td>
-      <td><div>${fmt(a.kalibrasi_berikutnya)}</div>${ks.c?`<span class="badge ${ks.c}">${ks.t}</span>`:''}</td>
-      <td>${aksText}</td>
-      <td><div class="sub">${petugasText}</div></td>
-    </tr>`;
+      <td>${fmt(a.kalibrasi_berikutnya)}<div>${ks.c?`<span class="badge ${ks.c}">${esc(ks.t)}</span>`:dash}</div></td>
+      <td>${aks.length?aks.map(k=>`<div class="pv-ak">${esc(k.nama)} <span class="sub">(${esc(k.jumlah)}; ${esc(k.status)})</span></div>`).join(''):dash}</td>
+      <td><div><span class="sub">Input:</span> ${esc(a.created_by||'-')}</div><div><span class="sub">Update:</span> ${esc(a.updated_by||'-')}</div></td></tr>`;
   }).join('');
-
-  $('pvBody').innerHTML=`
-    <div class="pv-meta">
-      <div>
-        <h3>LAPORAN INVENTARIS ALAT – INSTALASI ANESTESI RSUA</h3>
-        <div class="pv-info">Tanggal laporan: <b>${esc(reportDate())}</b> · Cakupan: ${esc(scopeText)}</div>
-      </div>
-      <div class="pv-file">Berkas: ${esc(fileName)}</div>
-    </div>
-
-    <div class="pv-stats">
-      <div class="pv-stat"><b>${total}</b><span>Total alat diekspor</span></div>
-      <div class="pv-stat"><b>${baik}</b><span>Kondisi baik</span></div>
-      <div class="pv-stat"><b>${lewat}</b><span>Kalibrasi lewat</span></div>
-      <div class="pv-stat"><b>${segera}</b><span>Kalibrasi ≤ 30 hari</span></div>
-    </div>
-
-    ${warnHtml}
-    ${excelNoteHtml}
-
-    <div class="pv-scroll">
-      <table class="pv-table">
-        <thead>
-          <tr>
-            <th style="width:38px">No</th>
-            <th>Nama Alat / Merek</th>
-            <th>No. Inv / Seri</th>
-            <th>Lokasi</th>
-            <th>Kondisi</th>
-            <th>Kalibrasi Berikutnya</th>
-            <th>Aksesoris</th>
-            <th>Petugas</th>
-          </tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-    </div>
-    <div class="pv-foot-note">
-      <span>Instalasi Anestesi – Rumah Sakit Universitas Airlangga</span>
-      <span>Menampilkan seluruh ${total} baris data yang siap diekspor</span>
-    </div>
-  `;
+  $('pvBody').innerHTML=`<div class="pv-meta"><b>LAPORAN INVENTARIS ALAT – INSTALASI ANESTESI RSUA</b>
+    <div class="r"><span class="k">Tanggal laporan</span><span>${esc(reportDate())}</span></div>
+    <div class="r"><span class="k">Cakupan</span><span>${esc(scope)}</span></div>
+    <div class="r"><span class="k">Nama file</span><span>${esc(PV.file)}</span></div></div>
+    <div class="pv-stats">${cnt.map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('')}</div>
+    ${notes.join('')}
+    <div class="pv-tw"><table><thead><tr><th>No</th><th>Nama alat &amp; merek/model</th><th>No. inventaris &amp; seri</th><th>Lokasi</th><th>Kondisi</th><th>Kalibrasi berikutnya</th><th>Aksesoris</th><th>Petugas</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  $('pvDl').disabled=false;$('pvPrint').disabled=false;
+}
+function pvScope(n){
+  const p=[];
+  if(curLok())p.push('Lokasi: '+lokLabel(curLok()));
+  if($('fKon').value)p.push('Kondisi: '+$('fKon').value);
+  if($('fKal').value)p.push('Kalibrasi: '+$('fKal').selectedOptions[0].textContent);
+  const q=$('q').value.trim();if(q)p.push('Pencarian: “'+q+'”');
+  return (p.length?p.join(' · '):'Semua data (tanpa filter)')+' — '+n+' dari '+ALAT.length+' alat';
 }
 
-async function confirmExportDownload(){
-  if(!previewState || previewState.loading)return;
-  const st=previewState;
-  const btn=$('btnPvDownload');
-  const origText=btn.textContent;
-  btn.disabled=true;
-  btn.textContent='Memproses…';
-
+function exportPDF(){
+  const list=getFilteredAlat();if(!list.length){alert('Tidak ada data untuk dilaporkan.');return;}
+  pvShell('pdf');pvShow(list,AKS.slice(),pvScope(list.length),[]);
+}
+function exportCSV(){
+  if(!ALAT.length){alert('Belum ada data alat untuk diekspor.');return;}
+  pvShell('csv');
+  pvShow(ALAT.slice(),AKS.slice(),'Seluruh data inventaris — '+ALAT.length+' alat, '+AKS.length+' baris aksesoris',
+    ['<div class="pv-note">File CSV memuat seluruh kolom data (termasuk catatan serta waktu input/update) dan kolom aksesoris, dengan penyandian UTF-8 BOM agar terbaca benar di Excel. Pratinjau di bawah menampilkan ringkasannya.</div>']);
+}
+async function exportExcel(){
   try{
-    if(st.type==='pdf'){
-      downloadPDF(st.alat,st.aks,st.fileName);
-      closeExportPreview();
-      notif('Laporan PDF berhasil diunduh ✓');
-    }else if(st.type==='excel'){
-      await downloadExcel(st);
-      closeExportPreview();
-      notif('Excel berhasil dibuat dari data Google Sheets terbaru ✓');
-      if(st.warn && st.warn.length){
-        setTimeout(()=>alert('Catatan hasil ekspor:
-
-• '+st.warn.join('
-• ')),300);
-      }
-    }else if(st.type==='csv'){
-      downloadCSV(st.alat,st.aks,st.fileName);
-      closeExportPreview();
-      notif('File CSV berhasil diunduh ✓');
-    }
+    if(!window.JSZip)throw new Error('Library JSZip belum termuat. Periksa koneksi internet lalu muat ulang halaman.');
+    if(saving)throw new Error('Masih ada proses simpan/hapus yang berjalan. Tunggu beberapa detik lalu ekspor lagi.');
+  }catch(e){alert('Gagal mengekspor Excel: '+e.message);return;}
+  pvShell('xlsx');
+  $('pvBody').innerHTML='<div class="empty" role="status">Mengambil data terbaru dari Google Sheets…</div>';
+  const t=PV.token;
+  try{
+    // Ambil snapshot langsung dari Google Sheets, bukan hanya cache tampilan browser.
+    const latest=await jsonp(cfg().url);
+    if(t!==PV.token)return;
+    if(!latest||!latest.ok)throw new Error((latest&&latest.error)||'Gagal mengambil data terbaru dari Google Sheets.');
+    const alat=Array.isArray(latest.alat)?latest.alat:[];
+    const aks=Array.isArray(latest.aksesoris)?latest.aksesoris:[];
+    if(!alat.length){closePreview();alert('Belum ada data alat untuk diekspor.');return;}
+    const response=await fetch(new URL(TEMPLATE_XLSX,window.location.href).toString(),{cache:'no-store'});
+    if(t!==PV.token)return;
+    if(!response.ok)throw new Error('Template '+TEMPLATE_XLSX+' tidak ditemukan. Letakkan file template di folder yang sama dengan index.html.');
+    const tpl=await response.arrayBuffer();
+    if(t!==PV.token)return;
+    // Urutkan menurut No. Inventaris (yang kosong di akhir), lalu nama.
+    const sorted=alat.slice().sort((a,b)=>{
+      const x=String(a.no_inventaris||'').trim(),y=String(b.no_inventaris||'').trim();
+      if(!x!==!y)return x?-1:1;
+      return naturalCmp(x,y)||naturalCmp(a.nama||'',b.nama||'');
+    });
+    const ids=new Set(sorted.map(a=>String(a.id)));
+    const aksOk=aks.filter(k=>ids.has(String(k.alat_id)));
+    const warn=[];
+    if(sorted.length>REPORT_CAP)warn.push('Sheet laporan (Master, Monitoring Kalibrasi, Perlu Perhatian, Dashboard) pada template memuat '+REPORT_CAP+' alat pertama menurut No. Inventaris. '+(sorted.length-REPORT_CAP)+' alat lainnya tetap tersimpan di sheet Alat tetapi belum tampil di sheet laporan.');
+    if(aksOk.length>AKS_CAP)warn.push('Sheet laporan hanya membaca '+AKS_CAP+' baris aksesoris pertama; '+(aksOk.length-AKS_CAP)+' baris aksesoris lainnya tidak ikut tampil di kolom Aksesoris.');
+    PV.tpl=tpl;PV.snap={alat,aks,sorted,aksOk};
+    pvShow(sorted,aksOk,'Seluruh data inventaris (snapshot terbaru Google Sheets) — '+sorted.length+' alat, '+aksOk.length+' baris aksesoris',
+      ['<div class="pv-note"><b>Catatan Excel:</b> data ditulis ke sheet <i>Alat</i> dan <i>Aksesoris</i> pada template. Rumus di sheet <i>Dashboard, Master, Monitoring,</i> dan <i>Perlu Perhatian</i> akan dihitung ulang otomatis saat file dibuka di Excel/LibreOffice. Urutan pratinjau mengikuti No. Inventaris seperti pada file.</div>',
+       ...warn.map(w=>'<div class="pv-note pv-warn"><b>Peringatan kapasitas template:</b> '+esc(w)+'</div>')]);
   }catch(e){
-    console.error('Gagal mengunduh ekspor:',e);
-    alert('Gagal mengekspor data: '+e.message);
-  }finally{
-    if($('btnPvDownload')){
-      $('btnPvDownload').disabled=false;
-      $('btnPvDownload').textContent=origText;
-    }
+    if(t!==PV.token)return;
+    console.error('Pratinjau Excel gagal:',e);
+    closePreview();
+    alert('Gagal mengekspor Excel: '+e.message);
   }
 }
-
-function downloadPDF(list,srcAks,fileName){
-  if(!window.jspdf?.jsPDF){
-    throw new Error('Pustaka PDF belum termuat. Periksa koneksi internet lalu muat ulang halaman.');
-  }
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-  doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(0,32,96);
-  doc.text('LAPORAN INVENTARIS ALAT – INSTALASI ANESTESI RSUA',14,15);
-  doc.setFont('helvetica','normal');doc.setFontSize(9);
-  doc.text('Tanggal laporan: '+reportDate(),14,21);
-  const counts=[
-    ['Total alat',list.length],
-    ['Kondisi baik',list.filter(a=>a.kondisi==='Baik').length],
-    ['Kalibrasi lewat',list.filter(a=>kalStatus(a).k==='lewat').length],
-    ['Kalibrasi ≤30 hari',list.filter(a=>kalStatus(a).k==='segera').length]
-  ];
-  doc.text(counts.map(x=>x[0]+': '+x[1]).join('     |     '),14,27);
-  doc.autoTable({
-    startY:32,
-    head:[['No','Nama Alat','Merek / Model','No. Inventaris','No. Seri','Lokasi','Kondisi','Kalibrasi berikutnya','Status kalibrasi','Aksesoris','Diinput oleh','Diperbarui oleh']],
-    body:list.map((a,i)=>[
-      i+1,
-      a.nama,
-      [a.merek,a.model].filter(Boolean).join(' / '),
-      a.no_inventaris||'-',
-      a.no_seri||'-',
-      a.lokasi||'-',
-      a.kondisi||'-',
-      fmt(a.kalibrasi_berikutnya),
-      kalStatus(a).t,
-      aksOf(a.id,srcAks).map(k=>`${k.nama} (${k.jumlah}; ${k.status})`).join('
-'),
-      a.created_by||'-',
-      a.updated_by||'-'
-    ]),
-    styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},
-    headStyles:{fillColor:[0,32,96]},
-    alternateRowStyles:{fillColor:[245,247,251]},
-    didDrawPage:()=>{
-      doc.setFontSize(8);doc.setTextColor(90);
-      doc.text('Instalasi Anestesi RSUA',14,doc.internal.pageSize.height-7);
-      doc.text('Halaman '+doc.internal.getNumberOfPages(),doc.internal.pageSize.width-25,doc.internal.pageSize.height-7);
-    }
-  });
-  const y=doc.lastAutoTable.finalY+7;
-  if(y<doc.internal.pageSize.height-18){
-    doc.setFontSize(8);
-    doc.text('Keterangan penginput dan pembaruan tercantum pada file Excel untuk rincian administrasi.',14,y);
-  }
-  doc.save(fileName);
-}
-
-async function downloadExcel(st){
-  const zip=await JSZip.loadAsync(st.templateBuffer);
-  const alatRows=st.alat.map(a=>ALAT_COLS.map(c=>
-    (c==='kalibrasi_terakhir'||c==='kalibrasi_berikutnya')?ymd(a[c]):(a[c]==null?'':String(a[c]))
-  ));
-  const aksRows=st.aks.map(k=>AKS_COLS.map(c=>
-    c==='jumlah'?(Number(k.jumlah)||0):(k[c]==null?'':String(k[c]))
-  ));
-
+async function doExportExcel(){
+  if(!window.JSZip)throw new Error('Library JSZip belum termuat. Periksa koneksi internet lalu muat ulang halaman.');
+  if(saving)throw new Error('Masih ada proses simpan/hapus yang berjalan. Tunggu beberapa detik lalu ekspor lagi.');
+  const {alat,aks,sorted,aksOk}=PV.snap;
+  const zip=await JSZip.loadAsync(PV.tpl);
+  // Data mentah: sama persis dengan isi Google Sheet. Lokasi ditulis sesuai input manual (tanpa daftar template).
+  const alatRows=sorted.map(a=>ALAT_COLS.map(c=>
+    (c==='kalibrasi_terakhir'||c==='kalibrasi_berikutnya')?ymd(a[c]):(a[c]==null?'':String(a[c]))));
+  const aksRows=aksOk.map(k=>AKS_COLS.map(c=>c==='jumlah'?(Number(k.jumlah)||0):(k[c]==null?'':String(k[c]))));
   const pA=await xlSheetPath(zip,TAB_ALAT),pK=await xlSheetPath(zip,TAB_AKS);
   zip.file(pA,xlWriteRawRows(await zip.file(pA).async('string'),alatRows,ALAT_COLS.length));
   zip.file(pK,xlWriteRawRows(await zip.file(pK).async('string'),aksRows,AKS_COLS.length));
   await xlForceRecalc(zip);
-
-  const blob=await zip.generateAsync({
-    type:'blob',
-    mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    compression:'DEFLATE'
-  });
+  const blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',compression:'DEFLATE'});
   const url=URL.createObjectURL(blob),link=document.createElement('a');
-  link.href=url;link.download=st.fileName;
+  link.href=url;link.download=PV.file;
   document.body.appendChild(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1500);
+  // Sinkronkan cache halaman dengan snapshot yang baru diekspor.
+  ALAT=alat;AKS=aks;render();
 }
-
-function downloadCSV(list,srcAks,fileName){
+function doExportCSV(list,aksOf,fileName){
   const cols=['nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan','created_by','created_at','updated_by','updated_at'];
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   const lines=[[...cols,'aksesoris'].map(q).join(',')];
-  list.forEach(a=>lines.push([
-    ...cols.map(c=>a[c]),
-    aksOf(a.id,srcAks).map(k=>`${k.nama} (${k.jumlah}, ${k.status})`).join('; ')
-  ].map(q).join(',')));
-  const b=new Blob(['﻿'+lines.join('
-')],{type:'text/csv;charset=utf-8'});
-  const l=document.createElement('a');
-  l.href=URL.createObjectURL(b);
-  l.download=fileName;
-  document.body.appendChild(l);
-  l.click();
-  l.remove();
-  setTimeout(()=>URL.revokeObjectURL(l.href),1500);
+  list.forEach(a=>lines.push([...cols.map(c=>a[c]),aksOf(a.id).map(k=>`${k.nama} (${k.jumlah}, ${k.status})`).join('; ')].map(q).join(',')));
+  const b=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=fileName;l.click();
 }
-
+async function pvDownload(){
+  if(!PV.list.length)return;
+  const btn=$('pvDl'),label=btn.textContent,mode=PV.mode;
+  btn.disabled=true;$('pvCancel').disabled=true;PV.busy=true;
+  try{
+    if(mode==='pdf'){
+      if(!doExportPDF(PV.list,pvAks,PV.file))return;
+      notif('Laporan PDF berhasil dibuat ✓');
+    }else if(mode==='csv'){
+      doExportCSV(PV.list,pvAks,PV.file);
+      notif('File CSV berhasil dibuat ✓');
+    }else{
+      btn.textContent='Menyiapkan Excel…';
+      await doExportExcel();
+      notif('Excel berhasil dibuat dari data Google Sheets terbaru ✓');
+    }
+    PV.busy=false;closePreview();
+  }catch(e){
+    console.error('Ekspor gagal:',e);
+    alert('Gagal mengekspor '+PV_META[mode].b+': '+e.message);
+  }finally{
+    PV.busy=false;btn.disabled=false;btn.textContent=label;$('pvCancel').disabled=false;
+  }
+}
 /* Dropdown Ekspor Data */
 function closeExp(){$('expMenu').hidden=true;$('expBtn').setAttribute('aria-expanded','false')}
 function toggleExp(){const m=$('expMenu');m.hidden=!m.hidden;$('expBtn').setAttribute('aria-expanded',String(!m.hidden))}
 $('expMenu').addEventListener('click',closeExp);
-$('dlgPreview').addEventListener('close',()=>{previewState=null});
 document.addEventListener('click',e=>{if(!e.target.closest('#exp'))closeExp()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeExp()});
 load();
