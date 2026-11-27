@@ -534,37 +534,23 @@ function exportPDF(){
   if(y<doc.internal.pageSize.height-18){doc.setFontSize(8);doc.text('Keterangan penginput dan pembaruan tercantum pada file Excel untuk rincian administrasi.',14,y);}
   doc.save('laporan-inventaris-anestesi-'+new Date().toISOString().slice(0,10)+'.pdf');
 }
-// ===== EXPORT EXCEL: mengisi template "Inventaris_Alat_Anestesi_RSUA.xlsx" (5 tab) =====
-// Data ditulis langsung ke XML template (JSZip), bukan lewat ExcelJS, supaya grafik dashboard,
-// logo, rumus antar-tab, validasi data, dan pewarnaan kondisional di template tetap utuh.
-// Hanya tab 2_Master_Inventaris dan 4_Perlu_Perhatian yang diisi; tab 1, 3, dan 5 dihitung oleh rumus template.
+// ===== EXPORT EXCEL: mengisi template "Inventaris_Alat_Anestesi_RSUA.xlsx" =====
+// Data input ditulis apa adanya ke sheet "Alat" dan "Aksesoris" (struktur sama dengan Google Sheet).
+// Sheet 2_Master_Inventaris, 3_Monitoring_Kalibrasi, 4_Perlu_Perhatian, dan 1_Ringkasan_Dashboard
+// berisi rumus yang membaca dua sheet tersebut, sehingga setiap data yang diinput otomatis
+// masuk ke Master, Monitoring Kalibrasi, Perlu Perhatian, lalu diringkas di Dashboard.
+// File template dimodifikasi langsung di XML (JSZip) supaya grafik, logo, rumus, dan format tetap utuh.
 const TEMPLATE_XLSX='Inventaris_Alat_Anestesi_RSUA.xlsx';
 const XL_NS='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 const XL_REL_NS='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
-const TAB_MASTER='2_Master_Inventaris', TAB_PERHATIAN='4_Perlu_Perhatian';
-const MASTER_FIRST=8, MASTER_LAST=57;          // kapasitas template: 50 alat
-const PERHATIAN_FIRST=8, PERHATIAN_LAST=30;    // kapasitas template: 23 baris
-const LOK_TEMPLATE=['OK.1','OK.2','OK.3','OK.4','RR/PACU','Gudang'];
+const TAB_ALAT='Alat', TAB_AKS='Aksesoris';
+const ALAT_COLS=['id','nama','merek','model','no_seri','no_inventaris','lokasi','kondisi','kalibrasi_terakhir','kalibrasi_berikutnya','catatan','created_by','created_at','updated_by','updated_at'];
+const AKS_COLS=['id','alat_id','nama','jumlah','status','catatan'];
+const REPORT_CAP=50;     // kapasitas baris sheet laporan pada template (Master / Monitoring / Perlu Perhatian)
+const AKS_CAP=1000;      // kapasitas baris sheet Aksesoris yang dibaca rumus template
 
-// Tanggal -> nomor seri Excel (hari sejak 30 Des 1899); null jika kosong/tidak valid.
-function xlSerial(v){
-  const s=ymd(v);if(!s)return null;
-  const [y,m,d]=s.split('-').map(Number);
-  return Math.round((Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/864e5);
-}
-// 5 kondisi aplikasi -> 3 kondisi template.
-const kondisiTemplate=k=>k==='Baik'?'Baik':(k==='Rusak'||k==='Tidak aktif')?'Rusak':'Perlu Perbaikan';
-// Samakan penulisan lokasi bebas ("OK 1", "ok1", "Ruang pemulihan") dengan daftar lokasi template.
-function lokasiTemplate(raw){
-  const s=cleanLok(raw);if(!s)return '';
-  const k=s.toLowerCase().replace(/[\s._\-]+/g,'');
-  const m=k.match(/^(?:ok|kamaroperasi|ruangoperasi)([1-4])$/);
-  if(m)return 'OK.'+m[1];
-  if(/^(rr|pacu|rr\/?pacu|ruangpemulihan|recoveryroom)$/.test(k))return 'RR/PACU';
-  if(k==='gudang')return 'Gudang';
-  return s;
-}
 const xlClean=s=>String(s==null?'':s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+const xlEsc=s=>xlClean(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 function xlParse(xml){
   const d=new DOMParser().parseFromString(xml,'application/xml');
@@ -589,35 +575,69 @@ async function xlSheetPath(zip,name){
   const t=rel.getAttribute('Target').replace(/^\//,'');
   return t.startsWith('xl/')?t:'xl/'+t;
 }
-// Tulis nilai ke sel <c>, mempertahankan atribut gaya (s). Angka -> numerik, teks -> inline string.
-function xlSet(c,v){
-  while(c.firstChild)c.removeChild(c.firstChild);
-  const doc=c.ownerDocument;
-  if(v===null||v===undefined||v===''){c.setAttribute('t','n');return;}
-  if(typeof v==='number'){
-    c.setAttribute('t','n');
-    const e=doc.createElementNS(XL_NS,'v');e.textContent=String(v);c.appendChild(e);return;
+// Paksa Excel/LibreOffice menghitung ulang semua rumus saat file dibuka, supaya semua sheet laporan
+// selalu mengikuti data terbaru, bukan nilai cache template.
+async function xlForceRecalc(zip){
+  const f=zip.file('xl/workbook.xml');if(!f)return;
+  const wb=xlParse(await f.async('string')),root=wb.documentElement;
+  let cp=wb.getElementsByTagNameNS(XL_NS,'calcPr')[0];
+  if(!cp){
+    cp=wb.createElementNS(XL_NS,'calcPr');
+    const after=['definedNames','externalReferences','functionGroups','sheets'];
+    let ref=null;
+    for(const n of after){const e=wb.getElementsByTagNameNS(XL_NS,n)[0];if(e){ref=e;break;}}
+    if(ref&&ref.nextSibling)root.insertBefore(cp,ref.nextSibling);else root.appendChild(cp);
   }
-  c.setAttribute('t','inlineStr');
-  const is=doc.createElementNS(XL_NS,'is'),t=doc.createElementNS(XL_NS,'t');
-  t.setAttributeNS('http://www.w3.org/XML/1998/namespace','xml:space','preserve');
-  t.textContent=xlClean(v);is.appendChild(t);c.appendChild(is);
+  cp.setAttribute('fullCalcOnLoad','1');
+  cp.setAttribute('calcMode','auto');
+  zip.file('xl/workbook.xml',xlSerialize(wb));
 }
-// Isi blok baris first..last pada kolom `cols`; baris tanpa data dikosongkan (rumus kolom lain tidak disentuh).
-function xlFillBlock(doc,first,last,cols,data){
-  const cells=new Map(),rows=new Map();
-  [...doc.getElementsByTagNameNS(XL_NS,'row')].forEach(r=>rows.set(Number(r.getAttribute('r')),r));
-  [...doc.getElementsByTagNameNS(XL_NS,'c')].forEach(c=>cells.set(c.getAttribute('r'),c));
-  for(let r=first;r<=last;r++){
-    const d=data[r-first]||null;
-    cols.forEach(col=>{
-      const c=cells.get(col+r);
-      if(!c)throw new Error('Struktur template tidak sesuai: sel '+col+r+' tidak ditemukan.');
-      xlSet(c,d?d[col]:null);
-    });
-    const row=rows.get(r);
-    if(row){row.setAttribute('ht',d?'24':'20');row.setAttribute('customHeight','1');}
+
+// Tulis data ke sheet mentah (Alat / Aksesoris). Baris 1 (judul kolom) dipertahankan; baris 2 dst
+// diganti dengan `data` (array of array; string = teks, number = angka). Sisa baris lama dikosongkan.
+// Murni manipulasi teks XML, gaya sel (s=) dari template dipertahankan.
+function xlWriteRawRows(xml,data,nCols){
+  const a=xml.indexOf('<sheetData>'),b=xml.indexOf('</sheetData>');
+  if(a<0||b<0)throw new Error('Struktur sheet template tidak dikenali.');
+  const head=xml.slice(0,a+11),body=xml.slice(a+11,b),tail=xml.slice(b);
+  const rows=new Map();
+  const rowRe=/<row\b[^>]*?\/>|<row\b[^>]*?>[\s\S]*?<\/row>/g;
+  let m;
+  while((m=rowRe.exec(body))){rows.set(+/\br="(\d+)"/.exec(m[0])[1],m[0]);}
+  const colName=i=>String.fromCharCode(65+i);
+  const styleOf=(rowXml,col)=>{
+    const mm=new RegExp('<c r="'+col+'\\d+"[^>]*?\\bs="(\\d+)"').exec(rowXml||'');
+    return mm?mm[1]:'';
+  };
+  const dataStyle=[];                               // gaya sel baris data diambil dari baris 2 template
+  for(let i=0;i<nCols;i++)dataStyle.push(styleOf(rows.get(2),colName(i)));
+  const cell=(col,r,val,s)=>{
+    const sa=s?' s="'+s+'"':'';
+    if(val===null||val===undefined||val==='')return '<c r="'+col+r+'"'+sa+'/>';
+    if(typeof val==='number')return '<c r="'+col+r+'"'+sa+'><v>'+val+'</v></c>';
+    return '<c r="'+col+r+'"'+sa+' t="inlineStr"><is><t xml:space="preserve">'+xlEsc(val)+'</t></is></c>';
+  };
+  const openTag=(r)=>{
+    const old=rows.get(r);
+    if(old){const t=/^<row\b([^>]*?)\/?>/.exec(old)[1];return '<row'+t+'>';}
+    return '<row r="'+r+'">';
+  };
+  const lastOld=Math.max(1,...rows.keys());
+  const last=Math.max(lastOld,data.length+1);
+  for(let r=2;r<=last;r++){
+    const d=data[r-2];
+    if(d){
+      let x=openTag(r);
+      for(let i=0;i<nCols;i++)x+=cell(colName(i),r,d[i],dataStyle[i]);
+      rows.set(r,x+'</row>');
+    }else if(rows.has(r)&&/<v>|<is>/.test(rows.get(r))){
+      let x=openTag(r);                               // kosongkan isi lama, pertahankan gaya
+      for(let i=0;i<nCols;i++)x+=cell(colName(i),r,'',styleOf(rows.get(r),colName(i)));
+      rows.set(r,x+'</row>');
+    }
   }
+  const out=[...rows.keys()].sort((p,q)=>p-q).map(k=>rows.get(k)).join('');
+  return head+out+tail;
 }
 const naturalCmp=(x,y)=>String(x).localeCompare(String(y),'id',{numeric:true,sensitivity:'base'});
 
@@ -626,6 +646,7 @@ async function exportExcel(){
   if(btn){btn.disabled=true;btn.textContent='Menyiapkan Excel…';}
   try{
     if(!window.JSZip){throw new Error('Library JSZip belum termuat. Periksa koneksi internet lalu muat ulang halaman.');}
+    if(saving){throw new Error('Masih ada proses simpan/hapus yang berjalan. Tunggu beberapa detik lalu ekspor lagi.');}
 
     // Ambil snapshot langsung dari Google Sheets, bukan hanya cache tampilan browser.
     const latest=await jsonp(cfg().url);
@@ -638,71 +659,28 @@ async function exportExcel(){
     if(!response.ok)throw new Error('Template '+TEMPLATE_XLSX+' tidak ditemukan. Letakkan file template di folder yang sama dengan index.html.');
     const zip=await JSZip.loadAsync(await response.arrayBuffer());
 
-    const warn=[];
-    const todayStr=ymd(new Date().toISOString());
-    const todaySerial=xlSerial(todayStr);
-    const sisaHari=v=>{const s=ymd(v);return s?Math.round((Date.parse(s+'T00:00:00Z')-Date.parse(todayStr+'T00:00:00Z'))/864e5):null;};
-    const aksText=id=>aks.filter(k=>String(k.alat_id)===String(id)).map(k=>{
-      const n=Number(k.jumlah)||0;
-      return (k.nama||'')+(n>1?' ×'+n:'')+(k.status&&k.status!=='Lengkap'?' ('+k.status+')':'');
-    }).filter(Boolean).join(', ');
-
     // Urutkan menurut No. Inventaris (yang kosong di akhir), lalu nama.
     const sorted=alat.slice().sort((a,b)=>{
       const x=String(a.no_inventaris||'').trim(),y=String(b.no_inventaris||'').trim();
       if(!x!==!y)return x?-1:1;
       return naturalCmp(x,y)||naturalCmp(a.nama||'',b.nama||'');
     });
-    const cap=MASTER_LAST-MASTER_FIRST+1;
-    if(sorted.length>cap)warn.push('Template hanya memuat '+cap+' alat. '+(sorted.length-cap)+' alat terakhir (urut No. Inventaris) tidak ikut diekspor.');
-    const list=sorted.slice(0,cap).map(a=>({
-      a,kond:kondisiTemplate(a.kondisi),lok:lokasiTemplate(a.lokasi),sisa:sisaHari(a.kalibrasi_berikutnya)
-    }));
+    const ids=new Set(sorted.map(a=>String(a.id)));
+    const aksOk=aks.filter(k=>ids.has(String(k.alat_id)));
 
-    // ---- Tab 2_Master_Inventaris: kolom B–J, M, N (A, K, L adalah rumus template)
-    const master=list.map(({a,kond,lok})=>{
-      const kt=xlSerial(a.kalibrasi_terakhir),kb=xlSerial(a.kalibrasi_berikutnya);
-      return {
-        B:String(a.no_inventaris||'').trim()||'-',   // kolom B dipakai rumus sebagai penanda baris terisi
-        C:a.nama||'',D:a.merek||'',E:a.model||'',F:lok||'-',G:aksText(a.id),H:kond,   // '-' agar rumus tab lain tidak menampilkan 0
-        I:kt==null?'-':kt,J:kb==null?'-':kb,
-        M:'',                                           // Petugas: sengaja dikosongkan, diisi manual di sheet
-        N:a.catatan||''
-      };
-    });
-    const luar=list.filter(x=>!LOK_TEMPLATE.includes(x.lok)).length;
-    if(luar)warn.push(luar+' alat memakai lokasi di luar daftar template ('+LOK_TEMPLATE.join(', ')+') atau tanpa lokasi. Alat tersebut tetap ada di Master, tetapi tidak terhitung pada tabel lokasi di dashboard.');
+    // Data mentah: sama persis dengan isi Google Sheet. Lokasi ditulis sesuai input manual (tanpa daftar template).
+    const alatRows=sorted.map(a=>ALAT_COLS.map(c=>
+      (c==='kalibrasi_terakhir'||c==='kalibrasi_berikutnya')?ymd(a[c]):(a[c]==null?'':String(a[c]))));
+    const aksRows=aksOk.map(k=>AKS_COLS.map(c=>c==='jumlah'?(Number(k.jumlah)||0):(k[c]==null?'':String(k[c]))));
 
-    // ---- Tab 4_Perlu_Perhatian: rusak / perlu perbaikan / kalibrasi ≤ 7 hari (termasuk yang terlambat)
-    let att=[];
-    list.forEach(({a,kond,sisa},i)=>{
-      const detailKal=sisa==null?'':sisa<0?'Kalibrasi terlambat '+(-sisa)+' hari':sisa===0?'Kalibrasi jatuh tempo hari ini':'Kalibrasi berikutnya dalam '+sisa+' hari';
-      let kat=null,detail='',target=todaySerial,prio=0;
-      if(kond==='Rusak'){kat='Alat Rusak (Non-Aktif)';detail=a.catatan||'Kondisi: '+(a.kondisi||'Rusak');prio=0;}
-      else if(kond==='Perlu Perbaikan'){kat='Perlu Perbaikan';detail=a.catatan||'Kondisi: '+(a.kondisi||'Perlu Perbaikan');prio=1;}
-      else if(sisa!=null&&sisa<=7){
-        kat=sisa<0?'Kalibrasi Lewat Jatuh Tempo':'Kalibrasi Mendekati Jatuh Tempo';
-        detail=detailKal;prio=2;if(sisa>=0)target=xlSerial(a.kalibrasi_berikutnya);
-      }
-      if(kat)att.push({i,prio,row:{
-        B:master[i].B,C:a.nama||'',D:[a.merek,a.model].filter(Boolean).join(' '),E:master[i].F,
-        F:kat,G:detail,H:target,I:a.kondisi==='Dalam perbaikan'?'Dalam Perbaikan':'Belum Dilaporkan'
-      }});
-    });
-    const capP=PERHATIAN_LAST-PERHATIAN_FIRST+1;
-    if(att.length>capP){
-      warn.push('Ada '+att.length+' alat perlu perhatian; template hanya memuat '+capP+' baris. Yang diutamakan: rusak, lalu perlu perbaikan, lalu kalibrasi.');
-      att=att.slice().sort((x,y)=>x.prio-y.prio||x.i-y.i).slice(0,capP).sort((x,y)=>x.i-y.i);
-    }
+    const pA=await xlSheetPath(zip,TAB_ALAT),pK=await xlSheetPath(zip,TAB_AKS);
+    zip.file(pA,xlWriteRawRows(await zip.file(pA).async('string'),alatRows,ALAT_COLS.length));
+    zip.file(pK,xlWriteRawRows(await zip.file(pK).async('string'),aksRows,AKS_COLS.length));
+    await xlForceRecalc(zip);
 
-    // ---- Tulis ke XML tab, lalu kemas ulang
-    const pM=await xlSheetPath(zip,TAB_MASTER),pP=await xlSheetPath(zip,TAB_PERHATIAN);
-    const dM=xlParse(await zip.file(pM).async('string'));
-    xlFillBlock(dM,MASTER_FIRST,MASTER_LAST,['B','C','D','E','F','G','H','I','J','M','N'],master);
-    zip.file(pM,xlSerialize(dM));
-    const dP=xlParse(await zip.file(pP).async('string'));
-    xlFillBlock(dP,PERHATIAN_FIRST,PERHATIAN_LAST,['B','C','D','E','F','G','H','I'],att.map(x=>x.row));
-    zip.file(pP,xlSerialize(dP));
+    const warn=[];
+    if(sorted.length>REPORT_CAP)warn.push('Sheet laporan (Master, Monitoring Kalibrasi, Perlu Perhatian, Dashboard) pada template memuat '+REPORT_CAP+' alat pertama menurut No. Inventaris. '+(sorted.length-REPORT_CAP)+' alat lainnya tetap tersimpan di sheet Alat tetapi belum tampil di sheet laporan.');
+    if(aksRows.length>AKS_CAP)warn.push('Sheet laporan hanya membaca '+AKS_CAP+' baris aksesoris pertama; '+(aksRows.length-AKS_CAP)+' baris aksesoris lainnya tidak ikut tampil di kolom Aksesoris.');
 
     const blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',compression:'DEFLATE'});
     const url=URL.createObjectURL(blob),link=document.createElement('a');
