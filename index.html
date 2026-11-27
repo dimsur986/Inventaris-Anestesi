@@ -267,7 +267,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ALAT=[],AKS=[],editId=null;
 // API publik: tidak memerlukan login atau akun Google pada perangkat pengguna.
-const API_URL='https://script.google.com/macros/s/AKfycbzCRM7-ViCBzZPIlVvUCAVCWHN7nxZP18BxHCqsn97s2WY4K8OyzL_u-AgtunUYcKmm-Q/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbxmIqVtYfAt8TPJNZRFW42_hg3dP8dfPA8vUJRjcU_x93pQzXROxCIai1ZiXI-9MqEh/exec';
 const cfg=()=>({url:API_URL});
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
